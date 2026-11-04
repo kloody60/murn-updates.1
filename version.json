@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/Murn1.ps1",
-    "ps1_sha256":  "551E3B87F1BC1EC19A427AE2D57465EDBA85DF3431290BE2F7F03BEB252142AB",
-    "version":  "1.3.3",
-    "notes":  "المجسم ثلاثي الأبعاد صار أوضح: كرت الشاشة والرامات ينفصلون عن اللوحة ويرجعون يركّبون، والمراوح تقف وتشتغل تلقائي، بدون أي ألوان RGB.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/falcon.ico",
-    "sha256":  "1C5040BD7BC7A0F8CD5DDCEB841D61F40594A80BEB9B75812D3CC38CBF17D7A9",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.4/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.4/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.4/Murn1.ps1",
+    "ps1_sha256":  "B8CD96E1C2AB76E3639CE3DF95AC4A2C5B5CFACA10BD706D2B825F2213CD15A6",
+    "version":  "1.3.4",
+    "notes":  "إصلاح تسريب ذاكرة: تقليل تكرار فحص حالة الجهاز بالخلفية مع تنظيف دوري للذاكرة، وإصلاح تسريب أيقونات تبويب البرامج الشغالة.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.4/falcon.ico",
+    "sha256":  "D275EEE44B82EE22BDF46BC49F0ED07272C201C1617D9FF6F50F3FB170AB1FA5",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
