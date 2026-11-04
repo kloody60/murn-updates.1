@@ -1,8 +1,8 @@
 {
-    "version":  "1.3.7",
-    "ps1_sha256":  "22E763B236568581D71C8978E00D3208B2AE14BD3636DBA5270B6B9783D97609",
-    "sha256":  "CBAB946F7DA4C97B5B52C78C4A178839EF6D3DAF507341DE2E56B9D930684D72",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.7/Murn1.ps1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.7/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
-    "notes":  "كل الألوان الذهبية صارت أزرق سماوي: الشعار، الأيقونات، المجسم ثلاثي الأبعاد، والحالة الطبيعية بالمؤشرات والحرارة"
+    "version":  "1.3.8",
+    "ps1_sha256":  "29BC147054613FBAFE15B06B89723C563F9C8438053E723C028E4C5F045DA95E",
+    "sha256":  "560F80DE23F613FB53BA8189F415815EC97763531D23137C7FFCE0BA3A8E9E0A",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.8/Murn1.ps1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.8/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
+    "notes":  "إخفاء سكرول بار القائمة الجانبية + تحديث أيقونة الواجهة"
 }
