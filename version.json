@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/Murn1.ps1",
-    "ps1_sha256":  "488CB208E7BD585EEEDE4A994ECD6C0CE0DCFDA45AFF1136640749C2801445A8",
-    "version":  "1.2.7",
-    "notes":  "\"واجهة مرن\" صارت ملتصقة بالشعار بأقصى اليمين، ورقم الإصدار جنبها على يسارها.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/falcon.ico",
-    "sha256":  "CDF3CDFE7AB0D4EEA47E127FCB7E3E859223D658DB70D6FB010C95FFD9E4BC58",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.8/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.8/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.8/Murn1.ps1",
+    "ps1_sha256":  "ABB0336FB7EFD07D63D8F1B7C38C69C6741DBB10B1A747D0AC59E2C7B6DD0C66",
+    "version":  "1.2.8",
+    "notes":  "شريط التنقل صار صف أفقي ثابت فوق (بدون التفاف)، وعمود عمودي مستقيم على اليمين تحته فيه باقي التبويبات.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.8/falcon.ico",
+    "sha256":  "0442B102CA2F46C37E72AD9B0E3F5D5E62ABF358D82B7846E3CB64DECD2DB1FE",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
