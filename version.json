@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/Murn1.ps1",
-    "ps1_sha256":  "841D4CA4A5128185805412781A0537DF22ED56A7D1BAAE2A94965ECB2EBA741A",
-    "version":  "1.2.1",
-    "notes":  "الملف الموزَّع الآن exe واحد بس (Murn1.ps1 والأيقونات مدمجة بالداخل)؛ أول تشغيل يفتح معالج تثبيت يختار فيه المستخدم مكان التثبيت، وشارة \"صناعة سعودية\" صارت بمعالج التثبيت فقط.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/falcon.ico",
-    "sha256":  "7FD250EDA4E6D77E6034BFCB4F23DCA74BC1A2E8D2C95525CCEF5E7A454CA3DF",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.2/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.2/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.2/Murn1.ps1",
+    "ps1_sha256":  "87D7EE8A1DE555CCD66FFED6DED29AE986318577904CA5243A0B61FF19A7806F",
+    "version":  "1.2.2",
+    "notes":  "شعار SAUDI MADE بمعالج التثبيت صار نفس الصورة الرسمية بالضبط (مو رسم يدوي)، والنص صار بالإنجليزي.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.2/falcon.ico",
+    "sha256":  "BF77CCB2FF21B82447AAC99EB1B97CA70E0993038828D898ABD62CFE7CEAA9F7",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
