@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.3/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.3/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.3/Murn1.ps1",
-    "ps1_sha256":  "5244867B3689AEC5014E4F52AC705125B159F2209589835835A5B235FB7F111D",
-    "version":  "1.2.3",
-    "notes":  "بشريط العنوان: \"واجهة مرن\" صار على اليمين، ورقم الإصدار صار على اليسار بإطار صغير.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.3/falcon.ico",
-    "sha256":  "095781A8B97C5EE8E952BDE77D978D0C68C81B0B429DB0CDFEDDF4B66DF0CC61",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.4/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.4/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.4/Murn1.ps1",
+    "ps1_sha256":  "32B53214398B9E832F505BFBD677B13C6C4E6D0EF3DC463F8E8D50A50DD1C403",
+    "version":  "1.2.4",
+    "notes":  "تبويب \"تحميل يوتيوب\" صار \"تحميل من المنصات\" ويدعم يوتيوب وتيك توك وانستقرام وتويتر وغيرها.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.4/falcon.ico",
+    "sha256":  "253C0C5E7665EE1F6C97852A1DBC321B43C4E316B1EE1C41806516D9E2705141",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
