@@ -1,8 +1,8 @@
 {
-    "version":  "1.3.2",
-    "ps1_sha256":  "3686CCA34600009B811F64858517C68F3CC6AFC2994AB02D64E130038D32D1E9",
-    "sha256":  "425C3079C18DA2B79356468D3174028A7C9ACA7AADF5E8AA675A8E81D7235CBA",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.2/Murn1.ps1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.2/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
-    "notes":  "إصلاح: سكرول بار داكن بكل الصفحات، ورقم نسبة التنظيف التلقائي للرام صار واضح"
+    "version":  "1.3.3",
+    "ps1_sha256":  "CF1B7BD2B9F2A53765B794E2901E7D2BF77B079CC0D74ACF3158C96142F6935F",
+    "sha256":  "31EFCCC2405A73FF2BE498B35AF410F54FBEEC4844865852CC3C7ADAC8CB5907",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/Murn1.ps1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
+    "notes":  "البرنامج يفتح بملء الشاشة تلقائي، ومفتاح الضوء الليلي صار بنفس شكل المفاتيح الثانية"
 }
