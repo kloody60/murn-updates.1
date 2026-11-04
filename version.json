@@ -1,1 +1,12 @@
-{"url":"https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.1.0/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe","png_url":"https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.1.0/falcon.png","ps1_url":"https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.1.0/Murn1.ps1","ps1_sha256":"4BBB4757BC1F2E500AA09B09AE2E34DE9C1D9976AA42DAC82DDBCD9362400E43","version":"1.1.0","notes":"أول مرة تفتح البرنامج يطلع لك معالج تثبيت: تختار مكان ملفات البرنامج، واختصار سطح المكتب وقائمة ابدأ اختياري","ico_url":"https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.1.0/falcon.ico","sha256":"ABE35D3B56DF5D34B5259BEB02F082FFA62E0FFF161C29E5ABD2C185C2FF234B","png_sha256":"D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40","ico_sha256":"62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"}
+{
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/Murn1.ps1",
+    "ps1_sha256":  "50A867CA919ED321961BA14A33F2D41CE400084144681BEBC3F240D5DFA57DDB",
+    "version":  "1.2.0",
+    "notes":  "تصميم جديد: شريط تنقل علوي أفقي بدل القائمة الجانبية، رأس مطوّر بشعار وشارة الإصدار، وشارة \"صناعة سعودية\".",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/falcon.ico",
+    "sha256":  "FBA0BF339A9285498CC160C0749CF37A2944DF5DB6ED7D4AD3E94EB6EF8B0859",
+    "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
+    "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
+}
