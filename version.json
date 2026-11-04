@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/Murn1.ps1",
-    "ps1_sha256":  "50A867CA919ED321961BA14A33F2D41CE400084144681BEBC3F240D5DFA57DDB",
-    "version":  "1.2.0",
-    "notes":  "تصميم جديد: شريط تنقل علوي أفقي بدل القائمة الجانبية، رأس مطوّر بشعار وشارة الإصدار، وشارة \"صناعة سعودية\".",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.0/falcon.ico",
-    "sha256":  "FBA0BF339A9285498CC160C0749CF37A2944DF5DB6ED7D4AD3E94EB6EF8B0859",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/Murn1.ps1",
+    "ps1_sha256":  "841D4CA4A5128185805412781A0537DF22ED56A7D1BAAE2A94965ECB2EBA741A",
+    "version":  "1.2.1",
+    "notes":  "الملف الموزَّع الآن exe واحد بس (Murn1.ps1 والأيقونات مدمجة بالداخل)؛ أول تشغيل يفتح معالج تثبيت يختار فيه المستخدم مكان التثبيت، وشارة \"صناعة سعودية\" صارت بمعالج التثبيت فقط.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.1/falcon.ico",
+    "sha256":  "7FD250EDA4E6D77E6034BFCB4F23DCA74BC1A2E8D2C95525CCEF5E7A454CA3DF",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
