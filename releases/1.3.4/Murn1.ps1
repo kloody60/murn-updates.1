@@ -7,15 +7,17 @@ if (-not $isAdmin -and -not $env:MURN_TEST) {
     exit
 }
 
-$script:AppDir = if ($env:MURN_EXE -and (Test-Path -LiteralPath $env:MURN_EXE)) { Split-Path -Parent $env:MURN_EXE } else { $PSScriptRoot }
+$script:AppDir = if ($env:MURN_EXE -and (Test-Path -LiteralPath $env:MURN_EXE) -and (Test-Path -LiteralPath (Join-Path (Split-Path -Parent $env:MURN_EXE) 'Murn1.ps1'))) { Split-Path -Parent $env:MURN_EXE } else { $PSScriptRoot }
 $script:ThemeMode = 'dark'
 $script:AppVersion = '1.3.4'
 Add-Type -AssemblyName System.Drawing
 function C([int]$r, [int]$g, [int]$b) { [System.Drawing.Color]::FromArgb($r, $g, $b) }
+$script:Accent = (C 0 214 240)   # سماوي مثل مداد
+$script:AccentOk = (C 40 220 130)
 $script:PalDark = @{
-    Bg = (C 20 22 28); Card = (C 32 35 42); CardTop = (C 48 52 65); CardBot = (C 28 31 39)
-    CardBorder = (C 58 63 76); Track = (C 52 56 68); Tick = (C 90 96 112); Input = (C 16 17 20)
-    TitleBar = (C 24 26 33); Side = (C 14 15 20); NavHover = (C 30 33 42); NavActive = (C 40 44 58)
+    Bg = (C 10 17 27); Card = (C 16 26 40); CardTop = (C 22 36 54); CardBot = (C 14 23 36)
+    CardBorder = (C 30 50 72); Track = (C 28 42 60); Tick = (C 70 92 118); Input = (C 8 13 21)
+    TitleBar = (C 12 20 32); Side = (C 8 14 22); NavHover = (C 18 30 46); NavActive = (C 14 40 56)
     Text = [System.Drawing.Color]::White; SubText = [System.Drawing.Color]::Silver
     NavText = [System.Drawing.Color]::Gainsboro; LogText = [System.Drawing.Color]::LightGray
     Good = [System.Drawing.Color]::LightGreen; DarkMode = $true
@@ -33,6 +35,178 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 # own taskbar identity so the taskbar shows the falcon, not the PowerShell icon
 try { Add-Type -Namespace Murn -Name Shell -MemberDefinition '[System.Runtime.InteropServices.DllImport("shell32.dll")] public static extern void SetCurrentProcessExplicitAppUserModelID([System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string id);'; [Murn.Shell]::SetCurrentProcessExplicitAppUserModelID('Murn.Waja.App') } catch {}
 [System.Windows.Forms.Application]::EnableVisualStyles()
+
+# ---------- Installer (first run only) ----------
+function Show-InstallWizard {
+    $icoPath = Join-Path $script:AppDir 'falcon.ico'
+    $wizForm = New-Object System.Windows.Forms.Form
+    $wizForm.Text = 'تثبيت واجهة مرن'
+    $wizForm.Size = New-Object System.Drawing.Size(480, 300)
+    $wizForm.StartPosition = 'CenterScreen'
+    $wizForm.FormBorderStyle = 'FixedDialog'
+    $wizForm.MaximizeBox = $false; $wizForm.MinimizeBox = $false
+    $wizForm.RightToLeft = 'Yes'; $wizForm.RightToLeftLayout = $true
+    $wizForm.BackColor = $script:Pal.Bg
+    $wizForm.ForeColor = $script:Pal.Text
+    if (Test-Path -LiteralPath $icoPath) { try { $wizForm.Icon = New-Object System.Drawing.Icon($icoPath) } catch {} }
+
+    $saudiBadge = New-Object System.Windows.Forms.Panel
+    $saudiBadge.Size = New-Object System.Drawing.Size(108, 50)
+    $saudiBadge.Location = New-Object System.Drawing.Point(20, 155)
+    $saudiBadge.BackColor = $wizForm.BackColor
+
+    $saudiIconPath = Join-Path $script:AppDir 'saudi_badge.png'
+    $saudiPic = New-Object System.Windows.Forms.PictureBox
+    $saudiPic.Size = New-Object System.Drawing.Size(32, 32)
+    $saudiPic.Location = New-Object System.Drawing.Point((108 - 32 - 12), 9)
+    $saudiPic.SizeMode = 'Zoom'
+    $saudiPic.BackColor = [System.Drawing.Color]::Transparent
+    if (Test-Path -LiteralPath $saudiIconPath) { try { $saudiPic.Image = [System.Drawing.Image]::FromFile($saudiIconPath) } catch {} }
+    $saudiBadge.Controls.Add($saudiPic)
+
+    $saudiTxt = New-Object System.Windows.Forms.Label
+    $saudiTxt.Text = "SAUDI`r`nMADE"
+    $saudiTxt.RightToLeft = 'No'
+    $saudiTxt.TextAlign = 'MiddleRight'
+    $saudiTxt.Font = New-Object System.Drawing.Font('Segoe UI', 7.5, [System.Drawing.FontStyle]::Bold)
+    $saudiTxt.ForeColor = $script:Pal.Text
+    $saudiTxt.BackColor = [System.Drawing.Color]::Transparent
+    $saudiTxt.Location = New-Object System.Drawing.Point(0, 0)
+    $saudiTxt.Size = New-Object System.Drawing.Size((108 - 32 - 16), 50)
+    $saudiBadge.Controls.Add($saudiTxt)
+
+    $wizForm.Controls.Add($saudiBadge)
+
+    $lbl = New-Object System.Windows.Forms.Label
+    $lbl.Text = 'اختر المكان اللي تبي تثبت فيه ملفات البرنامج:'
+    $lbl.AutoSize = $true
+    $lbl.Location = New-Object System.Drawing.Point(20, 20)
+    $wizForm.Controls.Add($lbl)
+
+    $pathBox = New-Object System.Windows.Forms.TextBox
+    $pathBox.Text = 'C:\واجهة مرن'
+    $pathBox.Location = New-Object System.Drawing.Point(20, 50)
+    $pathBox.Size = New-Object System.Drawing.Size(320, 24)
+    $pathBox.BackColor = $script:Pal.Input
+    $pathBox.ForeColor = $script:Pal.Text
+    $pathBox.BorderStyle = 'FixedSingle'
+    $wizForm.Controls.Add($pathBox)
+
+    $browseBtn = New-Object System.Windows.Forms.Button
+    $browseBtn.Text = 'استعراض...'
+    $browseBtn.Location = New-Object System.Drawing.Point(350, 48)
+    $browseBtn.Size = New-Object System.Drawing.Size(100, 26)
+    $browseBtn.Add_Click({
+            $fbd = New-Object System.Windows.Forms.FolderBrowserDialog
+            if ($fbd.ShowDialog() -eq 'OK') {
+                $chosen = $fbd.SelectedPath
+                if ((Split-Path $chosen -Leaf) -ne 'واجهة مرن') { $chosen = Join-Path $chosen 'واجهة مرن' }
+                $pathBox.Text = $chosen
+            }
+        })
+    $wizForm.Controls.Add($browseBtn)
+
+    $chkDesktop = New-Object System.Windows.Forms.CheckBox
+    $chkDesktop.Text = 'إنشاء اختصار على سطح المكتب'
+    $chkDesktop.Checked = $true
+    $chkDesktop.AutoSize = $true
+    $chkDesktop.Location = New-Object System.Drawing.Point(20, 95)
+    $wizForm.Controls.Add($chkDesktop)
+
+    $chkStart = New-Object System.Windows.Forms.CheckBox
+    $chkStart.Text = 'إضافة البرنامج لقائمة ابدأ'
+    $chkStart.Checked = $true
+    $chkStart.AutoSize = $true
+    $chkStart.Location = New-Object System.Drawing.Point(20, 125)
+    $wizForm.Controls.Add($chkStart)
+
+    $statusLbl = New-Object System.Windows.Forms.Label
+    $statusLbl.Text = ''
+    $statusLbl.ForeColor = [System.Drawing.Color]::Orange
+    $statusLbl.AutoSize = $true
+    $statusLbl.MaximumSize = New-Object System.Drawing.Size(430, 60)
+    $statusLbl.Location = New-Object System.Drawing.Point(20, 160)
+    $wizForm.Controls.Add($statusLbl)
+
+    $installBtn = New-Object System.Windows.Forms.Button
+    $installBtn.Text = 'تثبيت'
+    $installBtn.Location = New-Object System.Drawing.Point(260, 215)
+    $installBtn.Size = New-Object System.Drawing.Size(100, 32)
+    $installBtn.BackColor = $script:Accent
+    $installBtn.ForeColor = [System.Drawing.Color]::Black
+    $wizForm.Controls.Add($installBtn)
+
+    $cancelBtn = New-Object System.Windows.Forms.Button
+    $cancelBtn.Text = 'إلغاء'
+    $cancelBtn.Location = New-Object System.Drawing.Point(150, 215)
+    $cancelBtn.Size = New-Object System.Drawing.Size(100, 32)
+    $wizForm.Controls.Add($cancelBtn)
+    $cancelBtn.Add_Click({ $wizForm.Tag = 'cancel'; $wizForm.Close() })
+
+    $installBtn.Add_Click({
+            $target = $pathBox.Text.Trim()
+            if (-not $target) { $statusLbl.Text = 'لازم تحدد مسار'; return }
+            $installBtn.Enabled = $false; $statusLbl.ForeColor = [System.Drawing.Color]::LightGreen; $statusLbl.Text = 'جاري التثبيت...'
+            $wizForm.Refresh()
+            try {
+                function NormP($p) { ([IO.Path]::GetFullPath($p)).TrimEnd('\') }
+                $sameDir = (NormP $target) -ieq (NormP $script:AppDir)
+                if (-not (Test-Path -LiteralPath $target)) { New-Item -ItemType Directory -Force -Path $target | Out-Null }
+                if (-not $sameDir) {
+                    $exclude = @('installed.marker', 'update-token.secret')
+                    Get-ChildItem -LiteralPath $script:AppDir -Force | Where-Object { $_.Name -notin $exclude -and $_.Extension -ne '.zip' } | ForEach-Object {
+                        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $target $_.Name) -Recurse -Force
+                    }
+                }
+                $targetExe = Join-Path $target 'واجهة مرن.exe'
+                if ($env:MURN_EXE -and (Test-Path -LiteralPath $env:MURN_EXE) -and ((NormP $env:MURN_EXE) -ne (NormP $targetExe))) {
+                    Copy-Item -LiteralPath $env:MURN_EXE -Destination $targetExe -Force
+                }
+
+                Set-Content -LiteralPath (Join-Path $target 'installed.marker') (Get-Date -Format 'o') -Encoding utf8
+                try { Set-Content -LiteralPath (Join-Path $script:AppDir 'installed.marker') (Get-Date -Format 'o') -Encoding utf8 } catch {}
+
+                $iconPath = Join-Path $target 'falcon.ico'
+                $wsh = New-Object -ComObject WScript.Shell
+                if ($chkDesktop.Checked) {
+                    $desktopPath = [Environment]::GetFolderPath('Desktop')
+                    $sc = $wsh.CreateShortcut((Join-Path $desktopPath 'واجهة مرن.lnk'))
+                    $sc.TargetPath = $targetExe
+                    $sc.WorkingDirectory = $target
+                    if (Test-Path -LiteralPath $iconPath) { $sc.IconLocation = $iconPath }
+                    $sc.Save()
+                }
+                if ($chkStart.Checked) {
+                    $programsPath = [Environment]::GetFolderPath('Programs')
+                    $sc2 = $wsh.CreateShortcut((Join-Path $programsPath 'واجهة مرن.lnk'))
+                    $sc2.TargetPath = $targetExe
+                    $sc2.WorkingDirectory = $target
+                    if (Test-Path -LiteralPath $iconPath) { $sc2.IconLocation = $iconPath }
+                    $sc2.Save()
+                }
+
+                if ($sameDir) {
+                    $wizForm.Tag = 'continue'
+                } else {
+                    Start-Process -FilePath $targetExe
+                    $wizForm.Tag = 'relaunched'
+                }
+                $wizForm.Close()
+            } catch {
+                $statusLbl.ForeColor = [System.Drawing.Color]::Orange
+                $statusLbl.Text = 'صار خطأ: ' + $_.Exception.Message
+                $installBtn.Enabled = $true
+            }
+        })
+
+    [void]$wizForm.ShowDialog()
+    $wizForm.Tag
+}
+
+if (-not $env:MURN_TEST -and -not (Test-Path -LiteralPath (Join-Path $script:AppDir 'installed.marker'))) {
+    $wizResult = Show-InstallWizard
+    if ($wizResult -ne 'continue') { exit }
+}
 
 # ---------- icons: dark glass badges with a gold rim, used everywhere in the UI ----------
 $script:IcoCache = @{}
@@ -66,7 +240,7 @@ function New-Badge($size) {
     $g.FillEllipse($glossBrush, $glossRect); $glossBrush.Dispose()
     # gold rim
     $rimW = [single]([math]::Max(1, $size * 0.045))
-    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(190, 212, 170, 70)), $rimW
+    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(190, 0, 214, 240)), $rimW
     $g.DrawEllipse($pen, $rect); $pen.Dispose()
     $g.Dispose(); $bmp
 }
@@ -96,7 +270,7 @@ function New-BadgedSysIcon($rel, $size) {
 function Get-Ico($key, $size = 24) {
     $ck = "$key/$size"
     if ($script:IcoCache.ContainsKey($ck)) { return $script:IcoCache[$ck] }
-    $gold = @(228, 190, 110); $white = @(235, 238, 244)
+    $gold = @($script:Accent.R, $script:Accent.G, $script:Accent.B); $white = @(235, 238, 244)
     $img = switch ($key) {
         'mon'     { New-BadgedSysIcon 'System32\Taskmgr.exe' $size }
         'fix'     { New-BadgedSysIcon 'System32\mmc.exe' $size }
@@ -300,7 +474,7 @@ $form = New-Object System.Windows.Forms.Form
 $form.Text = 'واجهة مرن'
 $form.Size = New-Object System.Drawing.Size(1060, 720); $form.MinimumSize = New-Object System.Drawing.Size(900, 640)
 $form.StartPosition = 'CenterScreen'
-$form.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28)
+$form.BackColor = [System.Drawing.Color]::FromArgb(10, 17, 27)
 $form.ForeColor = [System.Drawing.Color]::White
 $form.Font = New-Object System.Drawing.Font('Segoe UI', 10)
 $iconPath = Join-Path $script:AppDir 'falcon.ico'
@@ -376,7 +550,7 @@ function Show-Done($what) {
 
 $gFlow = New-Object System.Windows.Forms.FlowLayoutPanel
 $gFlow.Dock = 'Fill'; $gFlow.FlowDirection = 'RightToLeft'; $gFlow.WrapContents = $true; $gFlow.AutoScroll = $true
-$gFlow.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28); $gFlow.Padding = New-Object System.Windows.Forms.Padding(12, 10, 12, 4)
+$gFlow.BackColor = [System.Drawing.Color]::FromArgb(10, 17, 27); $gFlow.Padding = New-Object System.Windows.Forms.Padding(12, 10, 12, 4)
 $gFlow.RightToLeft = 'No'
 $script:GaugeList = New-Object System.Collections.ArrayList
 $script:GFontBig = New-Object System.Drawing.Font('Segoe UI', 24, [System.Drawing.FontStyle]::Bold)
@@ -386,13 +560,35 @@ $script:GFmtL = New-Object System.Drawing.StringFormat; $script:GFmtL.Alignment 
 $script:GFmt = New-Object System.Drawing.StringFormat
 $script:GFmt.Alignment = 'Center'; $script:GFmt.LineAlignment = 'Center'; $script:GFmt.Trimming = 'EllipsisCharacter'; $script:GFmt.FormatFlags = 'DirectionRightToLeft'
 
+function Get-RoundRectPath($rect, $r) {
+    $p = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $d = $r * 2
+    $p.AddArc($rect.X, $rect.Y, $d, $d, 180, 90)
+    $p.AddArc($rect.Right - $d, $rect.Y, $d, $d, 270, 90)
+    $p.AddArc($rect.Right - $d, $rect.Bottom - $d, $d, $d, 0, 90)
+    $p.AddArc($rect.X, $rect.Bottom - $d, $d, $d, 90, 90)
+    $p.CloseFigure(); $p
+}
+
 function Get-GaugeColor($pct) {
-    if ($pct -ge 90) { [System.Drawing.Color]::FromArgb(235, 70, 60) } elseif ($pct -ge 75) { [System.Drawing.Color]::FromArgb(240, 150, 30) } else { [System.Drawing.Color]::FromArgb(0, 190, 110) }
+    if ($pct -ge 90) { [System.Drawing.Color]::FromArgb(235, 70, 60) } elseif ($pct -ge 75) { [System.Drawing.Color]::FromArgb(240, 150, 30) } else { $script:Accent }
 }
 
 function Paint-Gauge($s, $e) {
     $st = $s.Tag; $g = $e.Graphics
     $g.SmoothingMode = 'AntiAlias'; $g.TextRenderingHint = 'ClearTypeGridFit'
+    $w = $s.Width; $h = $s.Height
+    $shB = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(45, 0, 0, 0))
+    $g.FillRectangle($shB, 4, 6, ($w - 7), ($h - 7)); $shB.Dispose()
+    $cardRect = New-Object System.Drawing.Rectangle 0, 0, ($w - 5), ($h - 6)
+    $cardPath = Get-RoundRectPath $cardRect 16
+    $cardGrad = New-Object System.Drawing.Drawing2D.LinearGradientBrush $cardRect, $script:Pal.CardTop, $script:Pal.CardBot, 90
+    $g.FillPath($cardGrad, $cardPath); $cardGrad.Dispose()
+    $cardHl = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(90, 0, 214, 240)), 1
+    $g.DrawLine($cardHl, $cardRect.X + 16, $cardRect.Y + 1, $cardRect.Right - 16, $cardRect.Y + 1); $cardHl.Dispose()
+    $cardBp = New-Object System.Drawing.Pen $script:Pal.CardBorder, 1
+    $g.DrawPath($cardBp, $cardPath); $cardBp.Dispose()
+    $cardPath.Dispose()
     $pct = [math]::Min(100, [math]::Max(0, [int]$st.Pct))
     $rect = New-Object System.Drawing.RectangleF 18, 16, 140, 140
     $track = New-Object System.Drawing.Pen $script:Pal.Track, 12
@@ -412,7 +608,7 @@ function Paint-Gauge($s, $e) {
     }
     $fmt = $script:GFmt
     if ($null -ne $st.Temp) {
-        $tc = if ($st.Temp -ge 85) { [System.Drawing.Color]::FromArgb(235, 70, 60) } elseif ($st.Temp -ge 70) { [System.Drawing.Color]::FromArgb(240, 150, 30) } else { [System.Drawing.Color]::FromArgb(0, 190, 110) }
+        $tc = if ($st.Temp -ge 85) { [System.Drawing.Color]::FromArgb(235, 70, 60) } elseif ($st.Temp -ge 70) { [System.Drawing.Color]::FromArgb(240, 150, 30) } else { $script:Accent }
         $br = New-Object System.Drawing.SolidBrush $tc
         $g.DrawString(('{0:N0}°' -f $st.Temp), $script:GFontBig, $br, (New-Object System.Drawing.RectangleF 18, 58, 140, 42), $script:GFmtL); $br.Dispose()
         $subBr = New-Object System.Drawing.SolidBrush $script:Pal.SubText
@@ -423,8 +619,21 @@ function Paint-Gauge($s, $e) {
         $subBr = New-Object System.Drawing.SolidBrush $script:Pal.SubText
         $g.DrawString('الاستخدام', $script:GFontSub, $subBr, (New-Object System.Drawing.RectangleF 18, 100, 140, 18), $fmt); $subBr.Dispose()
     }
+    # شارة الحالة (شكل "جاهز للعب" في مداد)
+    $lvl = if ($null -ne $st.Temp) { $st.Temp } else { $pct }
+    $hi = if ($null -ne $st.Temp) { 85 } else { 90 }; $mid = if ($null -ne $st.Temp) { 70 } else { 75 }
+    $pTxt = if ($lvl -ge $hi) { 'حرج' } elseif ($lvl -ge $mid) { 'مرتفع' } else { 'طبيعي' }
+    $pCol = $col
+    $pillRect = New-Object System.Drawing.Rectangle ($w - 5 - 58), 8, 50, 18
+    $pillPath = Get-RoundRectPath $pillRect 8
+    $pillBg = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(40, $pCol.R, $pCol.G, $pCol.B))
+    $g.FillPath($pillBg, $pillPath); $pillBg.Dispose()
+    $pillPen = New-Object System.Drawing.Pen $pCol, 1
+    $g.DrawPath($pillPen, $pillPath); $pillPen.Dispose(); $pillPath.Dispose()
+    $pillBr = New-Object System.Drawing.SolidBrush $pCol
+    $g.DrawString($pTxt, $script:GFontSub, $pillBr, (New-Object System.Drawing.RectangleF ([single]$pillRect.X), ([single]$pillRect.Y), ([single]$pillRect.Width), ([single]$pillRect.Height)), $script:GFmtL); $pillBr.Dispose()
     $nameBr = New-Object System.Drawing.SolidBrush $script:Pal.Text
-    $g.DrawString($st.Name, $script:GFontName, $nameBr, (New-Object System.Drawing.RectangleF 4, 158, 168, 34), $fmt); $nameBr.Dispose()
+    $g.DrawString($st.Name,$script:GFontName, $nameBr, (New-Object System.Drawing.RectangleF 4, 158, 168, 34), $fmt); $nameBr.Dispose()
     $subBr2 = New-Object System.Drawing.SolidBrush $script:Pal.SubText
     $g.DrawString($st.Usage, $script:GFontSub, $subBr2, (New-Object System.Drawing.RectangleF 4, 190, 168, 28), $script:GFmtL); $subBr2.Dispose()
 }
@@ -501,7 +710,7 @@ function Show-GaugeMenu($panel) {
 function New-Gauge {
     $p = New-Object System.Windows.Forms.Panel
     $p.Width = 176; $p.Height = 222; $p.Margin = New-Object System.Windows.Forms.Padding(4)
-    $p.BackColor = $script:Pal.Card
+    $p.BackColor = $script:Pal.Bg
     $p.GetType().GetProperty('DoubleBuffered', [Reflection.BindingFlags]'Instance,NonPublic').SetValue($p, $true, $null)
     $p.Tag = @{ Pct = 0; Temp = $null; Name = ''; Usage = ''; Kind = $null }
     $p.Cursor = 'Hand'
@@ -514,7 +723,7 @@ $script:BtnClean = New-Object System.Windows.Forms.Button
 $BtnClean.Text = 'نظّف الآن'
 $BtnClean.Height = 46; $BtnClean.Dock = 'Top'
 $BtnClean.FlatStyle = 'Flat'; $BtnClean.FlatAppearance.BorderSize = 0
-$BtnClean.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 90); $BtnClean.ForeColor = [System.Drawing.Color]::White
+$BtnClean.BackColor = $script:Accent; $BtnClean.ForeColor = [System.Drawing.Color]::FromArgb(6, 14, 22)
 $BtnClean.Font = New-Object System.Drawing.Font('Segoe UI', 12, [System.Drawing.FontStyle]::Bold)
 
 $script:ChkBin = New-Object System.Windows.Forms.CheckBox
@@ -523,18 +732,19 @@ $ChkBin.Dock = 'Top'; $ChkBin.Height = 30; $ChkBin.Padding = New-Object System.W
 
 $script:Log = New-Object System.Windows.Forms.TextBox
 $Log.Multiline = $true; $Log.ReadOnly = $true; $Log.Dock = 'Fill'; $Log.ScrollBars = 'None'
-$Log.BackColor = [System.Drawing.Color]::FromArgb(16, 17, 20); $Log.ForeColor = [System.Drawing.Color]::LightGray
+$Log.BackColor = [System.Drawing.Color]::FromArgb(8, 13, 21); $Log.ForeColor = [System.Drawing.Color]::LightGray
 $Log.BorderStyle = 'None'; $Log.Font = New-Object System.Drawing.Font('Consolas', 10)
 
 $status = New-Object System.Windows.Forms.Label
 $status.Dock = 'Bottom'; $status.Height = 24; $status.ForeColor = [System.Drawing.Color]::Gray
-$status.Text = if ($script:Lhm) { 'مصدر الحرارة: LibreHardwareMonitor (كامل)' } else { 'حرارة المعالج غير متوفرة: حط LibreHardwareMonitorLib.dll بجانب البرنامج' }
+$status.Text = if ($script:Lhm) { 'مصدر الحرارة: LibreHardwareMonitor (كامل)' } else { '' }
+$status.Visible = [bool]$script:Lhm
 
 # ---------- Tabs ----------
 $tabs = New-Object System.Windows.Forms.TabControl
 $tabs.Dock = 'Fill'
 $tabs.RightToLeftLayout = $true
-$tabMon = New-Object System.Windows.Forms.TabPage 'المراقبة والتنظيف'
+$tabMon = New-Object System.Windows.Forms.TabPage 'الرئيسية'
 $tabFix = New-Object System.Windows.Forms.TabPage 'أدوات التصليح'
 foreach ($t in $tabMon, $tabFix) { $t.BackColor = $form.BackColor; $t.ForeColor = [System.Drawing.Color]::White }
 [void]$tabs.TabPages.Add($tabMon)
@@ -589,6 +799,8 @@ $tools = @(
        C = 'Stop-Process -Name explorer -Force; Start-Sleep 2; Start-Process explorer.exe' },
     @{ N = 'إنشاء نقطة استعادة'; D = 'يحفظ حالة النظام قبل أي تصليح (مرة كل 24 ساعة)'; Confirm = $false
        C = 'Enable-ComputerRestore -Drive "C:\"; Checkpoint-Computer -Description "واجهة مرن" -RestorePointType MODIFY_SETTINGS' },
+    @{ N = 'تحديث كل البرامج (winget)'; D = 'يحدّث كل البرامج المثبتة عندك دفعة وحدة. ياخذ شوي'; Confirm = $true
+       C = 'winget upgrade --all --include-unknown --accept-package-agreements --accept-source-agreements' },
     @{ N = 'إيقاف Edge و Copilot'; D = 'يوقف تشغيل Edge التلقائي والشريط الجانبي ويحذف تطبيق Copilot'; Confirm = $true; C = $edgeCmd }
 )
 
@@ -624,8 +836,8 @@ foreach ($tool in $tools) {
     $b = New-Object System.Windows.Forms.Button
     $b.Text = "$($tool.N)`r`n$($tool.D)"
     $b.Width = 370; $b.Height = 62; $b.Margin = New-Object System.Windows.Forms.Padding(6)
-    $b.FlatStyle = 'Flat'; $b.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
-    $b.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $b.ForeColor = [System.Drawing.Color]::White
+    $b.FlatStyle = 'Flat'; $b.FlatAppearance.BorderColor = $script:Accent
+    $b.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $b.ForeColor = [System.Drawing.Color]::White
     $b.TextAlign = 'MiddleRight'
     $b.Tag = $tool
     $b.Add_Click({ param($s, $e) Start-Tool $s.Tag })
@@ -878,7 +1090,7 @@ foreach ($t in $tweaks) { $t.C = $tweakChecks[$t.N] }
 $lvT = New-Object System.Windows.Forms.ListView
 $lvT.View = 'Details'; $lvT.CheckBoxes = $true; $lvT.FullRowSelect = $true; $lvT.HeaderStyle = 'None'
 $lvT.Dock = 'Fill'; $lvT.BorderStyle = 'None'
-$lvT.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $lvT.ForeColor = [System.Drawing.Color]::White
+$lvT.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $lvT.ForeColor = [System.Drawing.Color]::White
 [void]$lvT.Columns.Add('التويك', 270)
 [void]$lvT.Columns.Add('الحالة', 90)
 [void]$lvT.Columns.Add('الوصف', 330)
@@ -900,7 +1112,7 @@ foreach ($t in $tweaks) {
 
 $tLog = New-Object System.Windows.Forms.TextBox
 $tLog.Multiline = $true; $tLog.ReadOnly = $true; $tLog.Dock = 'Bottom'; $tLog.Height = 110; $tLog.ScrollBars = 'None'
-$tLog.BackColor = [System.Drawing.Color]::FromArgb(16, 17, 20); $tLog.ForeColor = [System.Drawing.Color]::LightGray
+$tLog.BackColor = [System.Drawing.Color]::FromArgb(8, 13, 21); $tLog.ForeColor = [System.Drawing.Color]::LightGray
 $tLog.BorderStyle = 'None'; $tLog.Font = New-Object System.Drawing.Font('Consolas', 10)
 
 $btnPanel = New-Object System.Windows.Forms.TableLayoutPanel
@@ -913,7 +1125,7 @@ function New-TweakButton($text, $color) {
     $b.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
     $b
 }
-$btnApply = New-TweakButton 'طبّق المحدد' ([System.Drawing.Color]::FromArgb(0, 150, 90))
+$btnApply = New-TweakButton 'طبّق المحدد' ([System.Drawing.Color]::FromArgb(0, 190, 215))
 $btnUndo  = New-TweakButton 'تراجع عن المحدد' ([System.Drawing.Color]::FromArgb(176, 100, 30))
 $btnAll   = New-TweakButton 'تحديث الحالة' ([System.Drawing.Color]::FromArgb(60, 66, 80))
 $btnPanel.Controls.Add($btnApply, 0, 0); $btnPanel.Controls.Add($btnUndo, 1, 0); $btnPanel.Controls.Add($btnAll, 2, 0)
@@ -1112,7 +1324,7 @@ function Get-StartupItemIcon($x) {
 
 $stFlow = New-Object System.Windows.Forms.FlowLayoutPanel
 $stFlow.Dock = 'Fill'; $stFlow.FlowDirection = 'TopDown'; $stFlow.WrapContents = $false; $stFlow.AutoScroll = $true
-$stFlow.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28); $stFlow.Padding = New-Object System.Windows.Forms.Padding(10, 8, 10, 8)
+$stFlow.BackColor = [System.Drawing.Color]::FromArgb(10, 17, 27); $stFlow.Padding = New-Object System.Windows.Forms.Padding(10, 8, 10, 8)
 $stFlow.RightToLeft = 'No'
 $stFlow.Add_Resize({ $w = [math]::Max(300, $stFlow.ClientSize.Width - 36); foreach ($r in $stFlow.Controls) { $r.Width = $w } })
 
@@ -1126,7 +1338,7 @@ function Get-ToggleBitmap($on) {
     $bmp = New-Object System.Drawing.Bitmap $w, $h
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $g.Clear([System.Drawing.Color]::FromArgb(32, 35, 42))
+    $g.Clear([System.Drawing.Color]::FromArgb(16, 26, 40))
     $trackOn = [System.Drawing.Color]::FromArgb(20, 180, 110)
     $trackOff = [System.Drawing.Color]::FromArgb(150, 60, 60)
     $rect = New-Object System.Drawing.Rectangle(1, 1, ($w - 2), ($h - 2))
@@ -1143,7 +1355,7 @@ function Get-ToggleBitmap($on) {
     $shadow = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(40, 0, 0, 0))
     $g.FillEllipse($shadow, $knobX, ($knobY + 1), $knobD, $knobD)
     $g.FillEllipse([System.Drawing.Brushes]::White, $knobX, $knobY, $knobD, $knobD)
-    $pen = New-Object System.Drawing.Pen($(if ($on) { [System.Drawing.Color]::FromArgb(0, 150, 90) } else { [System.Drawing.Color]::FromArgb(120, 45, 45) }), 2)
+    $pen = New-Object System.Drawing.Pen($(if ($on) { [System.Drawing.Color]::FromArgb(0, 190, 215) } else { [System.Drawing.Color]::FromArgb(120, 45, 45) }), 2)
     $cx = $knobX + $knobD * 0.5; $cy = $knobY + $knobD * 0.5
     if ($on) {
         $g.DrawLines($pen, @(
@@ -1162,7 +1374,7 @@ function Get-ToggleBitmap($on) {
 function New-ToggleSwitch {
     $pb = New-Object System.Windows.Forms.PictureBox
     $pb.Width = 64; $pb.Height = 28; $pb.Cursor = 'Hand'
-    $pb.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42)
+    $pb.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40)
     $pb.SizeMode = 'CenterImage'
     $pb
 }
@@ -1194,11 +1406,11 @@ function Update-Startup {
     foreach ($x in @(Get-StartupItems | Sort-Object @{Expression = { -not $_.Enabled } }, Name)) {
         $row = New-Object System.Windows.Forms.Panel
         $row.Width = $w; $row.Height = 50; $row.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, 7)
-        $row.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $row.Tag = $x
+        $row.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $row.Tag = $x
         $tgWrap = New-Object System.Windows.Forms.Panel
-        $tgWrap.Dock = 'Left'; $tgWrap.Width = 86; $tgWrap.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42)
+        $tgWrap.Dock = 'Left'; $tgWrap.Width = 86; $tgWrap.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40)
         $tg = New-ToggleSwitch
-        $tg.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42)
+        $tg.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40)
         $tg.Location = New-Object System.Drawing.Point(10, 10); $tg.Tag = $x
         Set-ToggleLook $tg $x.Enabled
         $tg.Add_Click({ param($s, $e) Switch-Startup $s })
@@ -1231,7 +1443,7 @@ $tabs.Add_SelectedIndexChanged({
 # ---------- Running programs ----------
 $rpFlow = New-Object System.Windows.Forms.FlowLayoutPanel
 $rpFlow.Dock = 'Fill'; $rpFlow.FlowDirection = 'TopDown'; $rpFlow.WrapContents = $false; $rpFlow.AutoScroll = $true
-$rpFlow.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28); $rpFlow.Padding = New-Object System.Windows.Forms.Padding(10, 8, 10, 8)
+$rpFlow.BackColor = [System.Drawing.Color]::FromArgb(10, 17, 27); $rpFlow.Padding = New-Object System.Windows.Forms.Padding(10, 8, 10, 8)
 $rpFlow.RightToLeft = 'No'
 $rpFlow.Add_Resize({ $w = [math]::Max(300, $rpFlow.ClientSize.Width - 36); foreach ($r in $rpFlow.Controls) { $r.Width = $w } })
 
@@ -1252,28 +1464,43 @@ function End-RunningProgram($b) {
 function Update-RunningProgs {
     $rpStatus.Text = 'جاري القراءة...'; [System.Windows.Forms.Application]::DoEvents()
     $rpFlow.SuspendLayout()
-    foreach ($c in @($rpFlow.Controls)) { $rpFlow.Controls.Remove($c); $c.Dispose() }
+    foreach ($c in @($rpFlow.Controls)) {
+        foreach ($pb in @($c.Controls | Where-Object { $_ -is [System.Windows.Forms.PictureBox] })) {
+            if ($pb.Image) { $img = $pb.Image; $pb.Image = $null; $img.Dispose() }
+        }
+        $rpFlow.Controls.Remove($c); $c.Dispose()
+    }
     $w = [math]::Max(300, $rpFlow.ClientSize.Width - 36)
     $procs = @(Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle } | Sort-Object WorkingSet64 -Descending)
     foreach ($x in $procs) {
         $row = New-Object System.Windows.Forms.Panel
         $row.Width = $w; $row.Height = 50; $row.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, 7)
-        $row.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $row.Tag = $x
+        $row.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $row.Tag = $x
+        $isSelf = ($x.Id -eq $PID)
         $icoBox = New-Object System.Windows.Forms.PictureBox
         $icoBox.Dock = 'Right'; $icoBox.Width = 42; $icoBox.SizeMode = 'CenterImage'
         try {
-            $exePath = $x.Path
-            if (-not $exePath) { $exePath = $x.MainModule.FileName }
-            if ($exePath -and (Test-Path -LiteralPath $exePath -ErrorAction SilentlyContinue)) {
-                $ic = [System.Drawing.Icon]::ExtractAssociatedIcon($exePath)
-                if ($ic) { $icoBox.Image = $ic.ToBitmap() }
+            if ($isSelf) {
+                $selfExePath = if ($env:MURN_EXE -and (Test-Path -LiteralPath $env:MURN_EXE)) { $env:MURN_EXE } else { Join-Path $script:AppDir 'واجهة مرن.exe' }
+                if (Test-Path -LiteralPath $selfExePath) {
+                    $ic = [System.Drawing.Icon]::ExtractAssociatedIcon($selfExePath)
+                    if ($ic) { $icoBox.Image = $ic.ToBitmap(); $ic.Dispose() }
+                }
+            } else {
+                $exePath = $x.Path
+                if (-not $exePath) { $exePath = $x.MainModule.FileName }
+                if ($exePath -and (Test-Path -LiteralPath $exePath -ErrorAction SilentlyContinue)) {
+                    $ic = [System.Drawing.Icon]::ExtractAssociatedIcon($exePath)
+                    if ($ic) { $icoBox.Image = $ic.ToBitmap(); $ic.Dispose() }
+                }
             }
         } catch {}
         $nm = New-Object System.Windows.Forms.Label
         $nm.Dock = 'Fill'; $nm.TextAlign = 'MiddleRight'; $nm.Padding = New-Object System.Windows.Forms.Padding(0, 0, 10, 0)
         $nm.Font = New-Object System.Drawing.Font('Segoe UI', 11); $nm.ForeColor = [System.Drawing.Color]::White
         $mem = '{0:N0} MB' -f ($x.WorkingSet64 / 1MB)
-        $nm.Text = "$($x.ProcessName)  —  $mem"
+        $dispName = if ($isSelf) { 'واجهة مرن' } else { $x.ProcessName }
+        $nm.Text = "$dispName  —  $mem"
         $endBtn = New-Object System.Windows.Forms.Button
         $endBtn.Dock = 'Left'; $endBtn.Width = 90; $endBtn.FlatStyle = 'Flat'; $endBtn.FlatAppearance.BorderSize = 0
         $endBtn.ForeColor = [System.Drawing.Color]::White; $endBtn.BackColor = [System.Drawing.Color]::FromArgb(150, 55, 55)
@@ -1429,7 +1656,7 @@ function Switch-NightLight {
 
 $dpFlow = New-Object System.Windows.Forms.FlowLayoutPanel
 $dpFlow.Dock = 'Fill'; $dpFlow.FlowDirection = 'TopDown'; $dpFlow.WrapContents = $false; $dpFlow.AutoScroll = $true
-$dpFlow.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28); $dpFlow.Padding = New-Object System.Windows.Forms.Padding(14)
+$dpFlow.BackColor = [System.Drawing.Color]::FromArgb(10, 17, 27); $dpFlow.Padding = New-Object System.Windows.Forms.Padding(14)
 $dpFlow.RightToLeft = 'No'
 $dpFlow.Add_Resize({ $w = [math]::Max(320, $dpFlow.ClientSize.Width - 48); foreach ($r in $dpFlow.Controls) { $r.Width = $w } })
 
@@ -1451,9 +1678,9 @@ function Update-Displays {
         $i++
         $card = New-Object System.Windows.Forms.Panel
         $card.Width = $w; $card.Height = 170; $card.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, 10)
-        $card.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $card.Padding = New-Object System.Windows.Forms.Padding(16, 10, 16, 10)
+        $card.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $card.Padding = New-Object System.Windows.Forms.Padding(16, 10, 16, 10)
 
-        $title = New-DpLabel ("شاشة $i" + $(if ($scr.Primary) { '  (الرئيسية)' } else { '' })) $true ([System.Drawing.Color]::FromArgb(212, 170, 70))
+        $title = New-DpLabel ("شاشة $i" + $(if ($scr.Primary) { '  (الرئيسية)' } else { '' })) $true ($script:Accent)
         $title.Dock = 'Top'
 
         $modes = Get-DisplayModes $scr.DeviceName
@@ -1490,13 +1717,13 @@ function Update-Displays {
 
     $nlCard = New-Object System.Windows.Forms.Panel
     $nlCard.Width = $w; $nlCard.Height = 110; $nlCard.Margin = New-Object System.Windows.Forms.Padding(0, 4, 0, 10)
-    $nlCard.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $nlCard.Padding = New-Object System.Windows.Forms.Padding(16, 10, 16, 10)
-    $nlTitle = New-DpLabel 'الضوء الليلي' $true ([System.Drawing.Color]::FromArgb(212, 170, 70)); $nlTitle.Dock = 'Top'
+    $nlCard.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $nlCard.Padding = New-Object System.Windows.Forms.Padding(16, 10, 16, 10)
+    $nlTitle = New-DpLabel 'الضوء الليلي' $true ($script:Accent); $nlTitle.Dock = 'Top'
     $nlRow = New-Object System.Windows.Forms.Panel; $nlRow.Dock = 'Top'; $nlRow.Height = 46
     $nlToggleWrap = New-Object System.Windows.Forms.Panel
-    $nlToggleWrap.Dock = 'Right'; $nlToggleWrap.Width = 90; $nlToggleWrap.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42)
+    $nlToggleWrap.Dock = 'Right'; $nlToggleWrap.Width = 90; $nlToggleWrap.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40)
     $nlToggle = New-ToggleSwitch
-    $nlToggle.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42)
+    $nlToggle.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40)
     $nlToggle.Location = New-Object System.Drawing.Point(10, 9)
     $nlOpen = New-TweakButton 'فتح إعدادات ويندوز' ([System.Drawing.Color]::FromArgb(60, 66, 80))
     $nlOpen.Dock = 'Left'; $nlOpen.Width = 170
@@ -1592,16 +1819,16 @@ function New-YtLabel($text) {
     $ytFlow.Controls.Add($l)
 }
 
-New-YtLabel 'رابط الفيديو (يوتيوب):'
+New-YtLabel 'رابط الفيديو (يوتيوب / تيك توك / انستقرام / تويتر وغيرها):'
 $script:YtUrl = New-Object System.Windows.Forms.TextBox
 $YtUrl.Width = 740; $YtUrl.RightToLeft = 'No'
-$YtUrl.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $YtUrl.ForeColor = [System.Drawing.Color]::White
+$YtUrl.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $YtUrl.ForeColor = [System.Drawing.Color]::White
 $ytFlow.Controls.Add($YtUrl)
 
 New-YtLabel 'الجودة:'
 $script:YtQuality = New-Object System.Windows.Forms.ComboBox
 $YtQuality.Width = 740; $YtQuality.DropDownStyle = 'DropDownList'; $YtQuality.FlatStyle = 'Flat'
-$YtQuality.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $YtQuality.ForeColor = [System.Drawing.Color]::White
+$YtQuality.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $YtQuality.ForeColor = [System.Drawing.Color]::White
 $qualities = @(
     @{ N = 'جودة عادية (سريعة)'; F = @('-f', 'b[ext=mp4]/b'); Ff = $false },
     @{ N = 'أفضل جودة (MP4) - تحتاج أداة التحويل'; F = @('-f', 'bv*+ba/b', '--merge-output-format', 'mp4'); Ff = $true },
@@ -1619,7 +1846,7 @@ $folderRow = New-Object System.Windows.Forms.Panel
 $folderRow.Width = 740; $folderRow.Height = 28
 $script:YtFolder = New-Object System.Windows.Forms.TextBox
 $YtFolder.Dock = 'Fill'; $YtFolder.RightToLeft = 'No'; $YtFolder.Text = Join-Path $env:USERPROFILE 'Downloads'
-$YtFolder.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $YtFolder.ForeColor = [System.Drawing.Color]::White
+$YtFolder.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $YtFolder.ForeColor = [System.Drawing.Color]::White
 $btnBrowse = New-Object System.Windows.Forms.Button
 $btnBrowse.Text = 'اختر...'; $btnBrowse.Dock = 'Right'; $btnBrowse.Width = 90
 $btnBrowse.FlatStyle = 'Flat'; $btnBrowse.ForeColor = [System.Drawing.Color]::White
@@ -1645,7 +1872,7 @@ function New-YtButton($text, $color, $w) {
     $b.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
     $ytBtns.Controls.Add($b); $b
 }
-$btnDl  = New-YtButton 'حمّل' ([System.Drawing.Color]::FromArgb(0, 150, 90)) 140
+$btnDl  = New-YtButton 'حمّل' ([System.Drawing.Color]::FromArgb(0, 190, 215)) 140
 $btnCan = New-YtButton 'إلغاء' ([System.Drawing.Color]::FromArgb(160, 50, 50)) 140
 $btnCan.Enabled = $false
 $ytFlow.Controls.Add($ytBtns)
@@ -1655,7 +1882,7 @@ $script:YtBar = New-Object System.Windows.Forms.ProgressBar
 $YtBar.Width = 740; $YtBar.Height = 24; $YtBar.Minimum = 0; $YtBar.Maximum = 100
 $YtBar.Margin = New-Object System.Windows.Forms.Padding(0, 12, 0, 0)
 $ytFlow.Controls.Add($YtBar)
-Register-DarkProgress $YtBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 150, 90))
+Register-DarkProgress $YtBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 190, 215))
 $script:YtInfo = New-Object System.Windows.Forms.Label
 $YtInfo.AutoSize = $true; $YtInfo.Margin = New-Object System.Windows.Forms.Padding(0, 4, 0, 0)
 $YtInfo.ForeColor = [System.Drawing.Color]::LightGreen; $YtInfo.Text = ' '
@@ -1663,7 +1890,7 @@ $ytFlow.Controls.Add($YtInfo)
 $script:YtLog = New-Object System.Windows.Forms.TextBox
 $YtLog.Multiline = $true; $YtLog.ReadOnly = $true; $YtLog.ScrollBars = 'None'; $YtLog.Width = 740; $YtLog.Height = 110
 $YtLog.RightToLeft = 'No'; $YtLog.BorderStyle = 'None'; $YtLog.Font = New-Object System.Drawing.Font('Consolas', 9)
-$YtLog.BackColor = [System.Drawing.Color]::FromArgb(16, 17, 20); $YtLog.ForeColor = [System.Drawing.Color]::LightGray
+$YtLog.BackColor = [System.Drawing.Color]::FromArgb(8, 13, 21); $YtLog.ForeColor = [System.Drawing.Color]::LightGray
 $ytFlow.Controls.Add($YtLog)
 
 $script:YtProc = $null; $script:YtCancel = $false
@@ -1744,8 +1971,8 @@ $btnDl.Add_Click({
     if (-not $exe) { return }
     $js = Find-JsRuntime
     if (-not $js) {
-        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { $YtStatus.Text = 'يوتيوب يحتاج أداة مساعدة غير موجودة عندك وما قدرت أثبتها تلقائياً'; return }
-        $r = [System.Windows.Forms.MessageBox]::Show("يوتيوب يحتاج أداة مساعدة صغيرة عشان يشتغل التحميل.`r`nأثبّتها لك؟", 'واجهة مرن', 'YesNo', 'Question')
+        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { $YtStatus.Text = 'التحميل يحتاج أداة مساعدة غير موجودة عندك وما قدرت أثبتها تلقائياً'; return }
+        $r = [System.Windows.Forms.MessageBox]::Show("التحميل يحتاج أداة مساعدة صغيرة عشان يشتغل.`r`nأثبّتها لك؟", 'واجهة مرن', 'YesNo', 'Question')
         if ($r -eq 'Yes') { Start-InWindow 'winget install --id DenoLand.Deno -e --accept-package-agreements --accept-source-agreements'; $YtStatus.Text = 'بعد ما يخلص التثبيت اضغط حمّل مرة ثانية' }
         return
     }
@@ -1763,7 +1990,7 @@ $btnCan.Add_Click({
     }
 })
 
-$tabYt = New-Object System.Windows.Forms.TabPage 'تحميل يوتيوب'
+$tabYt = New-Object System.Windows.Forms.TabPage 'تحميل من المنصات'
 $tabYt.BackColor = $form.BackColor; $tabYt.ForeColor = [System.Drawing.Color]::White
 $tabYt.Controls.Add($ytFlow)
 [void]$tabs.TabPages.Add($tabYt)
@@ -1818,7 +2045,7 @@ $cvFileRow = New-Object System.Windows.Forms.Panel
 $cvFileRow.Width = 740; $cvFileRow.Height = 28
 $script:CvFile = New-Object System.Windows.Forms.TextBox
 $CvFile.Dock = 'Fill'; $CvFile.RightToLeft = 'No'; $CvFile.ReadOnly = $true
-$CvFile.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $CvFile.ForeColor = [System.Drawing.Color]::White
+$CvFile.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $CvFile.ForeColor = [System.Drawing.Color]::White
 $CvFile.BorderStyle = 'FixedSingle'; Register-DarkInput $CvFile
 $btnCvPick = New-Object System.Windows.Forms.Button
 $btnCvPick.Text = 'اختر...'; $btnCvPick.Dock = 'Right'; $btnCvPick.Width = 90
@@ -1838,7 +2065,7 @@ $btnCvPick.Add_Click({
 New-CvLabel 'حوّلها إلى صيغة:'
 $script:CvFormat = New-Object System.Windows.Forms.ComboBox
 $CvFormat.Width = 740; $CvFormat.DropDownStyle = 'DropDownList'; $CvFormat.FlatStyle = 'Flat'
-$CvFormat.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $CvFormat.ForeColor = [System.Drawing.Color]::White
+$CvFormat.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $CvFormat.ForeColor = [System.Drawing.Color]::White
 foreach ($f in $cvFormats) { [void]$CvFormat.Items.Add($f.N) }
 $CvFormat.SelectedIndex = 0
 $cvFlow.Controls.Add($CvFormat)
@@ -1849,7 +2076,7 @@ $cvOutRow = New-Object System.Windows.Forms.Panel
 $cvOutRow.Width = 740; $cvOutRow.Height = 28
 $script:CvFolder = New-Object System.Windows.Forms.TextBox
 $CvFolder.Dock = 'Fill'; $CvFolder.RightToLeft = 'No'
-$CvFolder.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $CvFolder.ForeColor = [System.Drawing.Color]::White
+$CvFolder.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $CvFolder.ForeColor = [System.Drawing.Color]::White
 $CvFolder.BorderStyle = 'FixedSingle'; Register-DarkInput $CvFolder
 $btnCvBrowse = New-Object System.Windows.Forms.Button
 $btnCvBrowse.Text = 'اختر...'; $btnCvBrowse.Dock = 'Right'; $btnCvBrowse.Width = 90
@@ -1876,7 +2103,7 @@ function New-CvButton($text, $color, $w) {
     $b.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
     $cvBtns.Controls.Add($b); $b
 }
-$btnCv    = New-CvButton 'حوّل' ([System.Drawing.Color]::FromArgb(0, 150, 90)) 140
+$btnCv    = New-CvButton 'حوّل' ([System.Drawing.Color]::FromArgb(0, 190, 215)) 140
 $btnCvCan = New-CvButton 'إلغاء' ([System.Drawing.Color]::FromArgb(160, 50, 50)) 140
 $btnCvCan.Enabled = $false
 $cvFlow.Controls.Add($cvBtns)
@@ -1885,7 +2112,7 @@ $script:CvBar = New-Object System.Windows.Forms.ProgressBar
 $CvBar.Width = 740; $CvBar.Height = 24; $CvBar.Minimum = 0; $CvBar.Maximum = 100
 $CvBar.Margin = New-Object System.Windows.Forms.Padding(0, 12, 0, 0)
 $cvFlow.Controls.Add($CvBar)
-Register-DarkProgress $CvBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 150, 90))
+Register-DarkProgress $CvBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 190, 215))
 $script:CvInfo = New-Object System.Windows.Forms.Label
 $CvInfo.AutoSize = $true; $CvInfo.Margin = New-Object System.Windows.Forms.Padding(0, 4, 0, 0)
 $CvInfo.ForeColor = [System.Drawing.Color]::LightGreen; $CvInfo.Text = ' '
@@ -1893,7 +2120,7 @@ $cvFlow.Controls.Add($CvInfo)
 $script:CvLog = New-Object System.Windows.Forms.TextBox
 $CvLog.Multiline = $true; $CvLog.ReadOnly = $true; $CvLog.ScrollBars = 'None'; $CvLog.Width = 740; $CvLog.Height = 110
 $CvLog.RightToLeft = 'No'; $CvLog.BorderStyle = 'None'; $CvLog.Font = New-Object System.Drawing.Font('Consolas', 9)
-$CvLog.BackColor = [System.Drawing.Color]::FromArgb(16, 17, 20); $CvLog.ForeColor = [System.Drawing.Color]::LightGray
+$CvLog.BackColor = [System.Drawing.Color]::FromArgb(8, 13, 21); $CvLog.ForeColor = [System.Drawing.Color]::LightGray
 $cvFlow.Controls.Add($CvLog)
 $script:CvStatus = New-Object System.Windows.Forms.Label
 $CvStatus.AutoSize = $true; $CvStatus.ForeColor = [System.Drawing.Color]::Gray; $CvStatus.Margin = New-Object System.Windows.Forms.Padding(0, 8, 0, 0)
@@ -2074,424 +2301,6 @@ $tabCv.BackColor = $form.BackColor; $tabCv.ForeColor = [System.Drawing.Color]::W
 $tabCv.Controls.Add($cvFlow)
 [void]$tabs.TabPages.Add($tabCv)
 
-# ---------- Install programs (winget) ----------
-$apps = New-Object System.Collections.ArrayList
-function App($c, $n, $i, $d) { [void]$apps.Add(@{ C = $c; N = $n; I = $i; D = $d }) }
-App 'متصفحات' 'Google Chrome' 'Google.Chrome' 'متصفح قوقل'
-App 'متصفحات' 'Mozilla Firefox' 'Mozilla.Firefox' 'متصفح مفتوح المصدر'
-App 'متصفحات' 'Brave' 'Brave.Brave' 'متصفح سريع يمنع الإعلانات'
-App 'متصفحات' 'Opera GX' 'Opera.OperaGX' 'متصفح للألعاب'
-App 'متصفحات' 'Vivaldi' 'Vivaldi.Vivaldi' 'متصفح قابل للتخصيص'
-App 'متصفحات' 'Tor Browser' 'TorProject.TorBrowser' 'تصفح بخصوصية عالية'
-App 'تواصل' 'Discord' 'Discord.Discord' 'دردشة صوتية ونصية'
-App 'تواصل' 'Telegram' 'Telegram.TelegramDesktop' 'تلقرام للكمبيوتر'
-App 'تواصل' 'Zoom' 'Zoom.Zoom' 'اجتماعات فيديو'
-App 'تواصل' 'Microsoft Teams' 'Microsoft.Teams' 'اجتماعات وعمل جماعي'
-App 'تواصل' 'Slack' 'SlackTechnologies.Slack' 'تواصل الفرق'
-App 'تواصل' 'Signal' 'OpenWhisperSystems.Signal' 'مراسلة مشفرة'
-App 'تطوير' 'Visual Studio Code' 'Microsoft.VisualStudioCode' 'محرر أكواد'
-App 'تطوير' 'Git' 'Git.Git' 'إدارة نسخ الأكواد'
-App 'تطوير' 'GitHub Desktop' 'GitHub.GitHubDesktop' 'واجهة قيت هب'
-App 'تطوير' 'Python 3' 'Python.Python.3.12' 'لغة بايثون'
-App 'تطوير' 'Node.js LTS' 'OpenJS.NodeJS.LTS' 'بيئة جافاسكربت'
-App 'تطوير' 'Notepad++' 'Notepad++.Notepad++' 'محرر نصوص خفيف'
-App 'تطوير' 'Windows Terminal' 'Microsoft.WindowsTerminal' 'طرفية حديثة'
-App 'تطوير' 'PowerShell 7' 'Microsoft.PowerShell' 'نسخة بوروشيل الحديثة'
-App 'تطوير' 'Docker Desktop' 'Docker.DockerDesktop' 'حاويات دوكر'
-App 'تطوير' 'Postman' 'Postman.Postman' 'اختبار واجهات API'
-App 'تطوير' 'WinSCP' 'WinSCP.WinSCP' 'نقل ملفات SFTP'
-App 'تطوير' 'PuTTY' 'PuTTY.PuTTY' 'اتصال SSH'
-App 'مستندات' 'Adobe Acrobat Reader' 'Adobe.Acrobat.Reader.64-bit' 'قارئ PDF'
-App 'مستندات' 'SumatraPDF' 'SumatraPDF.SumatraPDF' 'قارئ PDF خفيف'
-App 'مستندات' 'LibreOffice' 'TheDocumentFoundation.LibreOffice' 'مكتب مجاني بديل أوفيس'
-App 'مستندات' 'Foxit PDF Reader' 'Foxit.FoxitReader' 'قارئ PDF'
-App 'مستندات' 'Obsidian' 'Obsidian.Obsidian' 'تدوين ملاحظات'
-App 'مستندات' 'Notion' 'Notion.Notion' 'ملاحظات ومشاريع'
-App 'ألعاب' 'Steam' 'Valve.Steam' 'متجر ألعاب ستيم'
-App 'ألعاب' 'Epic Games Launcher' 'EpicGames.EpicGamesLauncher' 'متجر إبك'
-App 'ألعاب' 'GOG Galaxy' 'GOG.Galaxy' 'متجر GOG'
-App 'ألعاب' 'Ubisoft Connect' 'Ubisoft.Connect' 'لانشر يوبيسوفت'
-App 'ألعاب' 'EA app' 'ElectronicArts.EADesktop' 'لانشر إي ايه'
-App 'ألعاب' 'Battle.net' 'Blizzard.BattleNet' 'لانشر بليزارد'
-App 'ألعاب' 'Playnite' 'Playnite.Playnite' 'مكتبة ألعاب موحدة'
-App 'أدوات مايكروسوفت' 'PowerToys' 'Microsoft.PowerToys' 'أدوات إضافية لويندوز'
-App 'أدوات مايكروسوفت' 'Process Explorer' 'Microsoft.Sysinternals.ProcessExplorer' 'مدير مهام متقدم'
-App 'أدوات مايكروسوفت' 'Autoruns' 'Microsoft.Sysinternals.Autoruns' 'تحكم متقدم ببدء التشغيل'
-App 'أدوات مايكروسوفت' 'Visual C++ Runtime (x64)' 'Microsoft.VCRedist.2015+.x64' 'مكتبات تحتاجها الألعاب'
-App 'أدوات مايكروسوفت' '.NET Desktop Runtime 8' 'Microsoft.DotNet.DesktopRuntime.8' 'مكتبات دوت نت'
-App 'وسائط' 'VLC' 'VideoLAN.VLC' 'مشغل فيديو شامل'
-App 'وسائط' 'MPC-HC' 'clsid2.mpc-hc' 'مشغل فيديو خفيف'
-App 'وسائط' 'OBS Studio' 'OBSProject.OBSStudio' 'تسجيل وبث الشاشة'
-App 'وسائط' 'Audacity' 'Audacity.Audacity' 'تحرير الصوت'
-App 'وسائط' 'HandBrake' 'HandBrake.HandBrake' 'تحويل وضغط الفيديو'
-App 'وسائط' 'GIMP' 'GIMP.GIMP' 'تحرير الصور'
-App 'وسائط' 'Inkscape' 'Inkscape.Inkscape' 'رسم متجهات'
-App 'وسائط' 'Kdenlive' 'KDE.Kdenlive' 'مونتاج فيديو'
-App 'وسائط' 'ShareX' 'ShareX.ShareX' 'تصوير الشاشة'
-App 'وسائط' 'IrfanView' 'IrfanSkiljan.IrfanView' 'عارض صور سريع'
-App 'وسائط' 'Spotify' 'Spotify.Spotify' 'موسيقى'
-App 'وسائط' 'K-Lite Codec Pack' 'CodecGuide.K-LiteCodecPack.Mega' 'ترميزات الفيديو'
-App 'أدوات وفحص' '7-Zip' '7zip.7zip' 'ضغط وفك الملفات'
-App 'أدوات وفحص' 'WinRAR' 'RARLab.WinRAR' 'ضغط وفك الملفات'
-App 'أدوات وفحص' 'Everything' 'voidtools.Everything' 'بحث فوري بالملفات'
-App 'أدوات وفحص' 'WinDirStat' 'WinDirStat.WinDirStat' 'يوضح مين ياخذ مساحة القرص'
-App 'أدوات وفحص' 'CPU-Z' 'CPUID.CPU-Z' 'مواصفات المعالج'
-App 'أدوات وفحص' 'GPU-Z' 'TechPowerUp.GPU-Z' 'مواصفات كرت الشاشة'
-App 'أدوات وفحص' 'HWiNFO' 'REALiX.HWiNFO' 'مراقبة الحرارة والحساسات'
-App 'أدوات وفحص' 'HWMonitor' 'CPUID.HWMonitor' 'مراقبة الحرارة'
-App 'أدوات وفحص' 'CrystalDiskInfo' 'CrystalDewWorld.CrystalDiskInfo' 'صحة الهاردسكات'
-App 'أدوات وفحص' 'CrystalDiskMark' 'CrystalDewWorld.CrystalDiskMark' 'سرعة الهاردسكات'
-App 'أدوات وفحص' 'MSI Afterburner' 'Guru3D.Afterburner' 'رفع أداء كرت الشاشة'
-App 'أدوات وفحص' 'Display Driver Uninstaller' 'Wagnardsoft.DisplayDriverUninstaller' 'إزالة تعريف الشاشة نظيف'
-App 'أدوات وفحص' 'Revo Uninstaller' 'RevoUninstaller.RevoUninstaller' 'إزالة البرامج بالكامل'
-App 'أدوات وفحص' 'Rufus' 'Rufus.Rufus' 'إنشاء فلاشة تثبيت'
-App 'أدوات وفحص' 'balenaEtcher' 'Balena.Etcher' 'حرق الصور على الفلاشة'
-App 'أدوات وفحص' 'Ventoy' 'Ventoy.Ventoy' 'فلاشة متعددة الأنظمة'
-App 'أدوات وفحص' 'qBittorrent' 'qBittorrent.qBittorrent' 'تحميل تورنت'
-App 'أدوات وفحص' 'AnyDesk' 'AnyDesk.AnyDesk' 'تحكم عن بعد'
-App 'أدوات وفحص' 'TeamViewer' 'TeamViewer.TeamViewer' 'تحكم عن بعد'
-App 'أدوات وفحص' 'Bitwarden' 'Bitwarden.Bitwarden' 'مدير كلمات المرور'
-App 'أدوات وفحص' 'Malwarebytes' 'Malwarebytes.Malwarebytes' 'فحص البرمجيات الخبيثة'
-App 'أدوات وفحص' 'Proton VPN' 'Proton.ProtonVPN' 'في بي إن'
-
-$script:ApSel = New-Object 'System.Collections.Generic.HashSet[string]'
-$script:ApBusy = $false
-
-function Get-RoundRectPath($rect, $r) {
-    $p = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $d = $r * 2
-    $p.AddArc($rect.X, $rect.Y, $d, $d, 180, 90)
-    $p.AddArc($rect.Right - $d, $rect.Y, $d, $d, 270, 90)
-    $p.AddArc($rect.Right - $d, $rect.Bottom - $d, $d, $d, 0, 90)
-    $p.AddArc($rect.X, $rect.Bottom - $d, $d, $d, 90, 90)
-    $p.CloseFigure(); $p
-}
-$apFontName = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
-$apFontCat = New-Object System.Drawing.Font('Segoe UI', 8)
-$apFmtC = New-Object System.Drawing.StringFormat
-$apFmtC.Alignment = 'Center'; $apFmtC.LineAlignment = 'Near'; $apFmtC.Trimming = 'EllipsisCharacter'; $apFmtC.FormatFlags = [System.Drawing.StringFormatFlags]::NoWrap
-
-function Paint-AppCard($s, $e) {
-    $a = $s.Tag; $g = $e.Graphics
-    $g.SmoothingMode = 'AntiAlias'; $g.TextRenderingHint = 'ClearTypeGridFit'
-    $w = $s.Width; $h = $s.Height
-    $sel = $script:ApSel.Contains($a.I)
-    $sh = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(45, 0, 0, 0))
-    $g.FillRectangle($sh, 5, 7, $w - 9, $h - 9); $sh.Dispose()
-    $rect = New-Object System.Drawing.Rectangle 0, 0, ($w - 6), ($h - 8)
-    $path = Get-RoundRectPath $rect 14
-    $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush $rect, $script:Pal.CardTop, $script:Pal.CardBot, 90
-    $g.FillPath($grad, $path); $grad.Dispose()
-    $hl = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(60, 255, 255, 255)), 1
-    $g.DrawLine($hl, $rect.X + 14, $rect.Y + 1, $rect.Right - 14, $rect.Y + 1); $hl.Dispose()
-    $bc = if ($sel) { [System.Drawing.Color]::FromArgb(212, 170, 70) } else { $script:Pal.CardBorder }
-    $pen = New-Object System.Drawing.Pen $bc, $(if ($sel) { 2 } else { 1 })
-    $g.DrawPath($pen, $path); $pen.Dispose()
-    $img = $apImgs.Images[$a.X]
-    if ($img) { $sz = 54; $g.DrawImage($img, [int](($w - $sz) / 2), 13, $sz, $sz) }
-    $nameBr = New-Object System.Drawing.SolidBrush $script:Pal.Text
-    $g.DrawString($a.N, $apFontName, $nameBr, (New-Object System.Drawing.RectangleF 3, ($h - 48), ($w - 10), 18), $apFmtC); $nameBr.Dispose()
-    $subBr = New-Object System.Drawing.SolidBrush $script:Pal.SubText
-    $g.DrawString($a.C, $apFontCat, $subBr, (New-Object System.Drawing.RectangleF 3, ($h - 29), ($w - 10), 16), $apFmtC); $subBr.Dispose()
-    if ($sel) {
-        $cr = New-Object System.Drawing.Rectangle ($w - 30), 6, 20, 20
-        $gb = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(212, 170, 70))
-        $g.FillEllipse($gb, $cr); $gb.Dispose()
-        $gp = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(24, 26, 33)), 2
-        $g.DrawLine($gp, $cr.X + 5, $cr.Y + 10, $cr.X + 9, $cr.Y + 14); $g.DrawLine($gp, $cr.X + 9, $cr.Y + 14, $cr.X + 15, $cr.Y + 6); $gp.Dispose()
-    }
-}
-function Toggle-AppCard($p) {
-    $a = $p.Tag
-    if ($script:ApSel.Contains($a.I)) { [void]$script:ApSel.Remove($a.I) } else { [void]$script:ApSel.Add($a.I) }
-    $apCount.Text = 'المحدد: ' + $script:ApSel.Count
-    $p.Invalidate()
-}
-function New-AppCard($a) {
-    $p = New-Object System.Windows.Forms.Panel
-    $p.Width = 134; $p.Height = 132; $p.Margin = New-Object System.Windows.Forms.Padding(6)
-    $p.BackColor = $script:Pal.Bg; $p.Cursor = 'Hand'; $p.Tag = $a
-    $p.GetType().GetProperty('DoubleBuffered', [Reflection.BindingFlags]'Instance,NonPublic').SetValue($p, $true, $null)
-    $tip = New-Object System.Windows.Forms.ToolTip
-    $tip.SetToolTip($p, $a.N + ' - ' + $a.D)
-    $p.Add_Paint({ param($s, $e) Paint-AppCard $s $e })
-    $p.Add_Click({ param($s, $e) Toggle-AppCard $s })
-    $p
-}
-$apFlow = New-Object System.Windows.Forms.FlowLayoutPanel
-$apFlow.Dock = 'Fill'; $apFlow.FlowDirection = 'RightToLeft'; $apFlow.WrapContents = $true; $apFlow.AutoScroll = $true
-$apFlow.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28); $apFlow.Padding = New-Object System.Windows.Forms.Padding(10, 10, 10, 4)
-$apFlow.RightToLeft = 'No'
-
-$apCount = New-Object System.Windows.Forms.Label
-$apCount.Dock = 'Left'; $apCount.Width = 130; $apCount.TextAlign = 'MiddleCenter'; $apCount.Text = 'المحدد: 0'
-function Show-Apps($filter) {
-    $f = "$filter".Trim()
-    $apFlow.SuspendLayout()
-    foreach ($c in @($apFlow.Controls)) { $apFlow.Controls.Remove($c); $c.Dispose() }
-    foreach ($a in $apps) {
-        if ($script:ApCat -and $a.C -ne $script:ApCat) { continue }
-        if ($f -and ($a.N -notlike "*$f*") -and ($a.D -notlike "*$f*") -and ($a.I -notlike "*$f*")) { continue }
-        [void]$apFlow.Controls.Add((New-AppCard $a))
-    }
-    $apFlow.ResumeLayout()
-}
-
-$apSearchPanel = New-Object System.Windows.Forms.Panel
-$apSearchPanel.Dock = 'Top'; $apSearchPanel.Height = 38
-$apSearchLbl = New-Object System.Windows.Forms.Label
-$apSearchLbl.Text = 'بحث:'; $apSearchLbl.Dock = 'Right'; $apSearchLbl.Width = 50; $apSearchLbl.TextAlign = 'MiddleCenter'
-$apSearch = New-Object System.Windows.Forms.TextBox
-$apSearch.Dock = 'Fill'; $apSearch.RightToLeft = 'No'
-$apSearch.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $apSearch.ForeColor = [System.Drawing.Color]::White
-$script:ApCat = ''
-$apCatBox = New-Object System.Windows.Forms.ComboBox
-$apCatBox.Dock = 'Left'; $apCatBox.Width = 170; $apCatBox.DropDownStyle = 'DropDownList'; $apCatBox.FlatStyle = 'Flat'
-$apCatBox.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $apCatBox.ForeColor = [System.Drawing.Color]::White
-[void]$apCatBox.Items.Add('كل الأقسام')
-foreach ($c in ($apps | ForEach-Object { $_.C } | Select-Object -Unique)) { [void]$apCatBox.Items.Add($c) }
-$apCatBox.SelectedIndex = 0
-Register-DarkInput $apCatBox
-$apCatBox.Add_SelectedIndexChanged({ $script:ApCat = if ($apCatBox.SelectedIndex -le 0) { '' } else { [string]$apCatBox.SelectedItem }; Show-Apps $apSearch.Text })
-$apSearchPanel.Controls.Add($apSearch); $apSearchPanel.Controls.Add($apCatBox); $apSearchPanel.Controls.Add($apSearchLbl); $apSearchPanel.Controls.Add($apCount)
-$apSearch.Add_TextChanged({ Show-Apps $apSearch.Text })
-
-$apLog = New-Object System.Windows.Forms.TextBox
-$apLog.Multiline = $true; $apLog.ReadOnly = $true; $apLog.Visible = $false; $apLog.Dock = 'Bottom'; $apLog.Height = 56; $apLog.ScrollBars = 'None'
-$apLog.BackColor = [System.Drawing.Color]::FromArgb(16, 17, 20); $apLog.ForeColor = [System.Drawing.Color]::LightGray
-$apLog.BorderStyle = 'None'; $apLog.Font = New-Object System.Drawing.Font('Consolas', 10); $apLog.RightToLeft = 'No'
-
-$apInfoPanel = New-Object System.Windows.Forms.Panel
-$apInfoPanel.Dock = 'Bottom'; $apInfoPanel.Height = 52
-$apBar = New-Object System.Windows.Forms.ProgressBar
-$apBar.Visible = $false; $apBar.Dock = 'Top'; $apBar.Height = 22; $apBar.Minimum = 0; $apBar.Maximum = 100
-Register-DarkProgress $apBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 150, 90))
-$apInfo = New-Object System.Windows.Forms.Label
-$apInfo.Dock = 'Fill'; $apInfo.ForeColor = [System.Drawing.Color]::LightGreen; $apInfo.Text = 'حدد البرامج اللي تبيها ثم اضغط ثبّت المحدد'; $apInfo.TextAlign = 'MiddleLeft'
-$apInfoPanel.Controls.Add($apInfo); $apInfoPanel.Controls.Add($apBar)
-
-$apBtnPanel = New-Object System.Windows.Forms.TableLayoutPanel
-$apBtnPanel.Dock = 'Bottom'; $apBtnPanel.Height = 48; $apBtnPanel.ColumnCount = 5; $apBtnPanel.RowCount = 1
-foreach ($i in 1..5) { [void]$apBtnPanel.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle 'Percent', 20)) }
-function New-ApButton($text, $color, $col) {
-    $b = New-Object System.Windows.Forms.Button
-    $b.Text = $text; $b.Dock = 'Fill'; $b.FlatStyle = 'Flat'; $b.FlatAppearance.BorderSize = 0
-    $b.BackColor = $color; $b.ForeColor = [System.Drawing.Color]::White
-    $b.Font = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
-    $apBtnPanel.Controls.Add($b, $col, 0); $b
-}
-$btnApInst = New-ApButton 'ثبّت المحدد' ([System.Drawing.Color]::FromArgb(0, 150, 90)) 0
-$btnApDel  = New-ApButton 'أزل المحدد' ([System.Drawing.Color]::FromArgb(176, 100, 30)) 1
-$btnApUpd  = New-ApButton 'حدّث كل البرامج' ([System.Drawing.Color]::FromArgb(0, 120, 190)) 2
-$btnApClr  = New-ApButton 'مسح التحديد' ([System.Drawing.Color]::FromArgb(60, 66, 80)) 3
-$btnApCan  = New-ApButton 'إلغاء' ([System.Drawing.Color]::FromArgb(160, 50, 50)) 4
-$btnApCan.Enabled = $false
-
-$script:ApProc = $null; $script:ApCancel = $false; $script:ApR = @{ Out = $null; Err = $null }
-$script:ApQueue = @(); $script:ApIdx = 0; $script:ApOk = 0; $script:ApFail = 0; $script:ApFrac = 0.0
-$apTimer = New-Object System.Windows.Forms.Timer; $apTimer.Interval = 150
-
-function Update-ApInfo {
-    $n = $script:ApQueue.Count
-    $job = $script:ApQueue[$script:ApIdx]
-    $apBar.Value = [int][math]::Min(100, [math]::Max(0, [math]::Round((($script:ApIdx + $script:ApFrac) / [math]::Max(1, $n)) * 100)))
-    $txt = $job.Verb + ': ' + $job.N
-    if ($n -gt 1) { $txt += ('   (' + ($script:ApIdx + 1) + ' من ' + $n + ')') }
-    if ($script:ApFrac -gt 0) { $txt += ('   ' + [math]::Round($script:ApFrac * 100) + '%') }
-    $apInfo.Text = $txt
-}
-
-function Read-ApLine($line) {
-    $t = $line.Trim()
-    if ($t.Length -lt 3) { return }
-    if ($t -match '([\d\.]+)\s*(KB|MB|GB)\s*/\s*([\d\.]+)\s*(KB|MB|GB)') {
-        $u = @{ KB = 1; MB = 1024; GB = 1048576 }
-        $c = [double]$Matches[1] * $u[$Matches[2]]; $tt = [double]$Matches[3] * $u[$Matches[4]]
-        if ($tt -gt 0) { $script:ApFrac = [math]::Min(1.0, $c / $tt); Update-ApInfo }
-        return
-    }
-    if ($t -match 'rror|fail|0x8') { $apLog.AppendText($t + "`r`n") }
-}
-
-function Start-ApProcess($exe, $procArgs) {
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $exe
-    $psi.Arguments = ($procArgs | ForEach-Object { '"' + ($_ -replace '"', '\"') + '"' }) -join ' '
-    $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
-    $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
-    $psi.StandardOutputEncoding = [Text.Encoding]::UTF8; $psi.StandardErrorEncoding = [Text.Encoding]::UTF8
-    $script:ApProc = [System.Diagnostics.Process]::Start($psi)
-    $script:ApR['Out'] = $script:ApProc.StandardOutput.ReadLineAsync()
-    $script:ApR['Err'] = $script:ApProc.StandardError.ReadLineAsync()
-    $apTimer.Start()
-}
-
-function Set-ApBusy($busy) {
-    foreach ($b in $btnApInst, $btnApDel, $btnApUpd, $btnApClr) { $b.Enabled = -not $busy }
-    $btnApCan.Enabled = $busy
-}
-
-function Start-ApJob {
-    $script:ApFrac = 0.0
-    Update-ApInfo
-    Start-ApProcess $script:ApWinget $script:ApQueue[$script:ApIdx].Args
-}
-
-function Finish-Ap {
-    Set-ApBusy $false
-    if ($script:ApCancel) { $apInfo.Text = 'تم الإلغاء'; return }
-    Show-Done $(if ($script:ApFail -eq 0) { 'تمت العملية على كل البرامج' } else { 'انتهت العملية وبعض البرامج فشلت' })
-    $apBar.Value = 100
-    $apInfo.Text = "انتهى: نجح $($script:ApOk)" + $(if ($script:ApFail) { " وفشل $($script:ApFail)" } else { '' })
-}
-
-function Complete-ApProc {
-    $apTimer.Stop()
-    $p = $script:ApProc
-    $p.WaitForExit(); $code = $p.ExitCode; $p.Dispose(); $script:ApProc = $null
-    $job = $script:ApQueue[$script:ApIdx]
-    if ($script:ApCancel) { Finish-Ap; return }
-    # 0 = success, -1978335189 = nothing to update, -1978335135 = already installed
-    if ($code -in 0, -1978335189, -1978335135) { $script:ApOk++; $apLog.AppendText('تم: ' + $job.N + "`r`n") }
-    else { $script:ApFail++; $apLog.AppendText('فشل: ' + $job.N + " (رمز $code)`r`n") }
-    $script:ApIdx++
-    if ($script:ApIdx -lt $script:ApQueue.Count) { Start-ApJob } else { Finish-Ap }
-}
-
-$apTimer.Add_Tick({
-    $p = $script:ApProc
-    if (-not $p) { return }
-    foreach ($k in 'Out', 'Err') {
-        $n = 0
-        while ($script:ApR[$k] -and $script:ApR[$k].IsCompleted -and $n++ -lt 300) {
-            $line = $script:ApR[$k].Result
-            if ($null -eq $line) { $script:ApR[$k] = $null; break }
-            Read-ApLine $line
-            $script:ApR[$k] = if ($k -eq 'Out') { $p.StandardOutput.ReadLineAsync() } else { $p.StandardError.ReadLineAsync() }
-        }
-    }
-    if (-not $script:ApR['Out'] -and -not $script:ApR['Err']) { Complete-ApProc }
-})
-
-function Start-ApQueue($jobs) {
-    $wg = Get-Command winget.exe -ErrorAction SilentlyContinue
-    if (-not $wg) { $apInfo.Text = 'أداة التثبيت غير متوفرة بجهازك (تحتاج ويندوز 10 أو 11 محدّث)'; return }
-    $script:ApWinget = $wg.Source
-    $script:ApQueue = @($jobs); $script:ApIdx = 0; $script:ApOk = 0; $script:ApFail = 0; $script:ApCancel = $false
-    $apLog.Clear(); $apBar.Value = 0; $apBar.Visible = $true
-    Set-ApBusy $true
-    Start-ApJob
-}
-
-$btnApInst.Add_Click({
-    $sel = @($apps | Where-Object { $script:ApSel.Contains($_.I) })
-    if (-not $sel.Count) { $apInfo.Text = 'حدد برنامج واحد على الأقل'; return }
-    $r = [System.Windows.Forms.MessageBox]::Show("تثبيت $($sel.Count) برنامج؟", 'واجهة مرن', 'YesNo', 'Question')
-    if ($r -ne 'Yes') { return }
-    Start-ApQueue ($sel | ForEach-Object { @{ N = $_.N; Verb = 'جاري التثبيت'; Args = @('install', '--id', $_.I, '-e', '--silent', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity') } })
-})
-$btnApDel.Add_Click({
-    $sel = @($apps | Where-Object { $script:ApSel.Contains($_.I) })
-    if (-not $sel.Count) { $apInfo.Text = 'حدد برنامج واحد على الأقل'; return }
-    $r = [System.Windows.Forms.MessageBox]::Show("إزالة $($sel.Count) برنامج من جهازك؟", 'واجهة مرن', 'YesNo', 'Warning')
-    if ($r -ne 'Yes') { return }
-    Start-ApQueue ($sel | ForEach-Object { @{ N = $_.N; Verb = 'جاري الإزالة'; Args = @('uninstall', '--id', $_.I, '-e', '--silent', '--disable-interactivity') } })
-})
-$btnApUpd.Add_Click({
-    $r = [System.Windows.Forms.MessageBox]::Show("تحديث كل البرامج المثبتة اللي لها تحديث؟ ممكن ياخذ وقت.", 'واجهة مرن', 'YesNo', 'Question')
-    if ($r -ne 'Yes') { return }
-    Start-ApQueue @(@{ N = 'كل البرامج'; Verb = 'جاري التحديث'; Args = @('upgrade', '--all', '--silent', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity', '--include-unknown') })
-})
-$btnApClr.Add_Click({ $script:ApSel.Clear(); $apCount.Text = 'المحدد: 0'; Show-Apps $apSearch.Text })
-$btnApCan.Add_Click({
-    if ($script:ApProc) {
-        $script:ApCancel = $true
-        Start-Process taskkill -ArgumentList '/PID', $script:ApProc.Id, '/T', '/F' -WindowStyle Hidden
-    }
-})
-
-# ---------- brand logos for the programs list (small icons cached in the icons folder) ----------
-$iconDir = Join-Path $script:AppDir 'icons'
-$apDomains = @{
-    'Google.Chrome' = 'chrome.com'; 'Mozilla.Firefox' = 'mozilla.org'; 'Brave.Brave' = 'brave.com'; 'Opera.OperaGX' = 'opera.com'; 'Vivaldi.Vivaldi' = 'vivaldi.com'; 'TorProject.TorBrowser' = 'torproject.org'
-    'Discord.Discord' = 'discord.com'; 'Telegram.TelegramDesktop' = 'telegram.org'; 'Zoom.Zoom' = 'zoom.us'; 'Microsoft.Teams' = 'teams.microsoft.com'; 'SlackTechnologies.Slack' = 'slack.com'; 'OpenWhisperSystems.Signal' = 'signal.org'
-    'Microsoft.VisualStudioCode' = 'code.visualstudio.com'; 'Git.Git' = 'git-scm.com'; 'GitHub.GitHubDesktop' = 'desktop.github.com'; 'Python.Python.3.12' = 'python.org'; 'OpenJS.NodeJS.LTS' = 'nodejs.org'
-    'Notepad++.Notepad++' = 'notepad-plus-plus.org'; 'Microsoft.WindowsTerminal' = 'microsoft.com'; 'Microsoft.PowerShell' = 'microsoft.com'; 'Docker.DockerDesktop' = 'docker.com'; 'Postman.Postman' = 'postman.com'
-    'WinSCP.WinSCP' = 'winscp.net'; 'PuTTY.PuTTY' = 'putty.org'
-    'Adobe.Acrobat.Reader.64-bit' = 'adobe.com'; 'SumatraPDF.SumatraPDF' = 'sumatrapdfreader.org'; 'TheDocumentFoundation.LibreOffice' = 'libreoffice.org'; 'Foxit.FoxitReader' = 'foxit.com'; 'Obsidian.Obsidian' = 'obsidian.md'; 'Notion.Notion' = 'notion.so'
-    'Valve.Steam' = 'steampowered.com'; 'EpicGames.EpicGamesLauncher' = 'epicgames.com'; 'GOG.Galaxy' = 'gog.com'; 'Ubisoft.Connect' = 'ubisoft.com'; 'ElectronicArts.EADesktop' = 'ea.com'; 'Blizzard.BattleNet' = 'battle.net'; 'Playnite.Playnite' = 'playnite.link'
-    'Microsoft.PowerToys' = 'microsoft.com'; 'Microsoft.Sysinternals.ProcessExplorer' = 'sysinternals.com'; 'Microsoft.Sysinternals.Autoruns' = 'sysinternals.com'; 'Microsoft.VCRedist.2015+.x64' = 'microsoft.com'; 'Microsoft.DotNet.DesktopRuntime.8' = 'dotnet.microsoft.com'
-    'VideoLAN.VLC' = 'videolan.org'; 'clsid2.mpc-hc' = 'mpc-hc.org'; 'OBSProject.OBSStudio' = 'obsproject.com'; 'Audacity.Audacity' = 'audacityteam.org'; 'HandBrake.HandBrake' = 'handbrake.fr'; 'GIMP.GIMP' = 'gimp.org'; 'Inkscape.Inkscape' = 'inkscape.org'
-    'KDE.Kdenlive' = 'kdenlive.org'; 'ShareX.ShareX' = 'getsharex.com'; 'IrfanSkiljan.IrfanView' = 'irfanview.com'; 'Spotify.Spotify' = 'spotify.com'; 'CodecGuide.K-LiteCodecPack.Mega' = 'codecguide.com'
-    '7zip.7zip' = '7-zip.org'; 'RARLab.WinRAR' = 'win-rar.com'; 'voidtools.Everything' = 'voidtools.com'; 'WinDirStat.WinDirStat' = 'windirstat.net'; 'CPUID.CPU-Z' = 'cpuid.com'; 'TechPowerUp.GPU-Z' = 'techpowerup.com'
-    'REALiX.HWiNFO' = 'hwinfo.com'; 'CPUID.HWMonitor' = 'cpuid.com'; 'CrystalDewWorld.CrystalDiskInfo' = 'crystalmark.info'; 'CrystalDewWorld.CrystalDiskMark' = 'crystalmark.info'; 'Guru3D.Afterburner' = 'msi.com'
-    'Wagnardsoft.DisplayDriverUninstaller' = 'wagnardsoft.com'; 'RevoUninstaller.RevoUninstaller' = 'revouninstaller.com'; 'Rufus.Rufus' = 'rufus.ie'; 'Balena.Etcher' = 'balena.io'; 'Ventoy.Ventoy' = 'ventoy.net'
-    'qBittorrent.qBittorrent' = 'qbittorrent.org'; 'AnyDesk.AnyDesk' = 'anydesk.com'; 'TeamViewer.TeamViewer' = 'teamviewer.com'; 'Bitwarden.Bitwarden' = 'bitwarden.com'; 'Malwarebytes.Malwarebytes' = 'malwarebytes.com'; 'Proton.ProtonVPN' = 'protonvpn.com'
-}
-$apCatColors = @{ 'متصفحات' = @(0, 120, 190); 'تواصل' = @(0, 150, 90); 'تطوير' = @(120, 70, 190); 'مستندات' = @(176, 100, 30); 'ألعاب' = @(190, 50, 50); 'أدوات مايكروسوفت' = @(0, 100, 160); 'وسائط' = @(200, 90, 140); 'أدوات وفحص' = @(70, 110, 120) }
-$apImgs = New-Object System.Windows.Forms.ImageList
-$apImgs.ImageSize = New-Object System.Drawing.Size(48, 48); $apImgs.ColorDepth = 'Depth32Bit'
-$k = 0
-foreach ($a in $apps) {
-    $a.X = $k++
-    $col = $apCatColors[$a.C]; if (-not $col) { $col = @(70, 76, 90) }
-    $bmp = New-Object System.Drawing.Bitmap 48, 48
-    $g = [System.Drawing.Graphics]::FromImage($bmp); $g.SmoothingMode = 'AntiAlias'; $g.TextRenderingHint = 'AntiAliasGridFit'
-    $g.FillEllipse((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb($col[0], $col[1], $col[2]))), 2, 2, 44, 44)
-    $sf = New-Object System.Drawing.StringFormat; $sf.Alignment = 'Center'; $sf.LineAlignment = 'Center'
-    $g.DrawString($a.N.Substring(0, 1).ToUpper(), (New-Object System.Drawing.Font('Segoe UI', 20, [System.Drawing.FontStyle]::Bold)), [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF 0, 0, 48, 48), $sf)
-    $g.Dispose(); $apImgs.Images.Add($bmp)
-}
-$script:LogoLoaded = New-Object 'System.Collections.Generic.HashSet[string]'
-$script:LogoStarted = $false; $script:LogoTicks = 0
-
-function Sync-Logos {
-    $changed = $false
-    foreach ($a in $apps) {
-        if ($script:LogoLoaded.Contains($a.I)) { continue }
-        $f = Join-Path $iconDir ($a.I + '.png')
-        if (-not (Test-Path -LiteralPath $f)) { continue }
-        try {
-            $ms = New-Object System.IO.MemoryStream (, [System.IO.File]::ReadAllBytes($f))
-            $src = [System.Drawing.Image]::FromStream($ms)
-            $bmp = New-Object System.Drawing.Bitmap 48, 48
-            $g = [System.Drawing.Graphics]::FromImage($bmp); $g.InterpolationMode = 'HighQualityBicubic'; $g.SmoothingMode = 'AntiAlias'
-            $g.DrawImage($src, 0, 0, 48, 48); $g.Dispose(); $src.Dispose(); $ms.Dispose()
-            $apImgs.Images[$a.X] = $bmp
-            [void]$script:LogoLoaded.Add($a.I); $changed = $true
-        } catch {}
-    }
-    if ($changed) { $apFlow.Invalidate($true) }
-}
-$logoTimer = New-Object System.Windows.Forms.Timer; $logoTimer.Interval = 1500
-$logoTimer.Add_Tick({
-    Sync-Logos
-    $script:LogoTicks++
-    if ($script:LogoLoaded.Count -ge $apDomains.Count -or $script:LogoTicks -gt 40) { $logoTimer.Stop() }
-})
-function Start-Logos {
-    if ($script:LogoStarted) { return }
-    $script:LogoStarted = $true
-    Sync-Logos
-    $need = @($apps | Where-Object { $apDomains[$_.I] -and -not $script:LogoLoaded.Contains($_.I) } | ForEach-Object { @{ I = $_.I; D = $apDomains[$_.I] } })
-    if (-not $need.Count) { return }
-    New-Item -ItemType Directory -Path $iconDir -Force -ErrorAction SilentlyContinue | Out-Null
-    $rs = [runspacefactory]::CreateRunspace(); $rs.Open()
-    $rs.SessionStateProxy.SetVariable('List', $need); $rs.SessionStateProxy.SetVariable('Dir', $iconDir)
-    $ps = [powershell]::Create(); $ps.Runspace = $rs
-    [void]$ps.AddScript('[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object Net.WebClient; foreach ($x in $List) { try { $tmp = Join-Path $Dir ($x.I + ".tmp"); $wc.DownloadFile("https://www.google.com/s2/favicons?domain=$($x.D)&sz=64", $tmp); Move-Item $tmp (Join-Path $Dir ($x.I + ".png")) -Force } catch {} }')
-    [void]$ps.BeginInvoke()
-    $logoTimer.Start()
-}
-
-Show-Apps ''
-$tabAp = New-Object System.Windows.Forms.TabPage 'تثبيت البرامج'
-$tabAp.BackColor = $form.BackColor; $tabAp.ForeColor = [System.Drawing.Color]::White
-
-$tabAp.Controls.Add($apFlow); $tabAp.Controls.Add($apLog); $tabAp.Controls.Add($apInfoPanel); $tabAp.Controls.Add($apBtnPanel); $tabAp.Controls.Add($apSearchPanel)
-[void]$tabs.TabPages.Add($tabAp)
-$tabs.Add_SelectedIndexChanged({ if ($tabs.SelectedTab -eq $tabAp) { Start-Logos } })
-
 # ---------- Tools: cleaning ----------
 $tlNames = @{ 'Prefetch' = 'ملفات Prefetch (تسريع الإقلاع)'; 'Internet cache' = 'كاش الإنترنت'; 'GPU shader cache' = 'كاش كرت الشاشة' }
 $tlTargets = New-Object System.Collections.ArrayList
@@ -2536,7 +2345,7 @@ $tlFlow.Padding = New-Object System.Windows.Forms.Padding(20)
 $tlTitle = New-Object System.Windows.Forms.Label
 $tlTitle.Text = 'أداة التنظيف'; $tlTitle.AutoSize = $true
 $tlTitle.Font = New-Object System.Drawing.Font('Segoe UI', 18, [System.Drawing.FontStyle]::Bold)
-$tlTitle.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$tlTitle.ForeColor = $script:Accent
 $tlFlow.Controls.Add($tlTitle)
 $tlDesc = New-Object System.Windows.Forms.Label
 $tlDesc.AutoSize = $false; $tlDesc.Width = 740; $tlDesc.Height = 150; $tlDesc.Margin = New-Object System.Windows.Forms.Padding(0, 12, 0, 0)
@@ -2544,7 +2353,7 @@ $tlDesc.Text = "زر واحد ينظف جهازك بدون ما تختار شي 
 $tlFlow.Controls.Add($tlDesc)
 $btnTlGo = New-Object System.Windows.Forms.Button
 $btnTlGo.Text = 'تنظيف سريع'; $btnTlGo.Width = 300; $btnTlGo.Height = 70; $btnTlGo.FlatStyle = 'Flat'; $btnTlGo.FlatAppearance.BorderSize = 0
-$btnTlGo.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 90); $btnTlGo.ForeColor = [System.Drawing.Color]::White
+$btnTlGo.BackColor = [System.Drawing.Color]::FromArgb(0, 190, 215); $btnTlGo.ForeColor = [System.Drawing.Color]::White
 $btnTlGo.Font = New-Object System.Drawing.Font('Segoe UI', 16, [System.Drawing.FontStyle]::Bold)
 $btnTlGo.Margin = New-Object System.Windows.Forms.Padding(0, 10, 0, 0)
 $tlFlow.Controls.Add($btnTlGo)
@@ -2560,19 +2369,19 @@ $tlStatus.AutoSize = $true; $tlStatus.ForeColor = [System.Drawing.Color]::Gray; 
 # ---- RAM cleaner section (Wise-Memory-Optimizer style) ----
 $ramCard = New-Object System.Windows.Forms.Panel
 $ramCard.Width = 740; $ramCard.Height = 170; $ramCard.Margin = New-Object System.Windows.Forms.Padding(0, 16, 0, 0)
-$ramCard.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $ramCard.Padding = New-Object System.Windows.Forms.Padding(18, 12, 18, 12)
+$ramCard.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $ramCard.Padding = New-Object System.Windows.Forms.Padding(18, 12, 18, 12)
 $ramTitle = New-Object System.Windows.Forms.Label
 $ramTitle.Text = 'تنظيف الرامات'; $ramTitle.Dock = 'Top'; $ramTitle.Height = 28; $ramTitle.TextAlign = 'MiddleRight'
-$ramTitle.Font = New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold); $ramTitle.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$ramTitle.Font = New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold); $ramTitle.ForeColor = $script:Accent
 $ramInfo = New-Object System.Windows.Forms.Label
 $ramInfo.Dock = 'Top'; $ramInfo.Height = 26; $ramInfo.TextAlign = 'MiddleRight'; $ramInfo.ForeColor = [System.Drawing.Color]::Gainsboro
 $ramInfo.Font = New-Object System.Drawing.Font('Segoe UI', 10.5)
 $ramBar = New-Object System.Windows.Forms.ProgressBar
 $ramBar.Dock = 'Top'; $ramBar.Height = 20; $ramBar.Minimum = 0; $ramBar.Maximum = 100; $ramBar.Margin = New-Object System.Windows.Forms.Padding(0, 4, 0, 8)
-Register-DarkProgress $ramBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 150, 90))
+Register-DarkProgress $ramBar ([System.Drawing.Color]::FromArgb(45, 48, 58)) ([System.Drawing.Color]::FromArgb(0, 190, 215))
 $ramBtnRow = New-Object System.Windows.Forms.Panel
 $ramBtnRow.Dock = 'Top'; $ramBtnRow.Height = 46
-$btnRamClean = New-TweakButton 'نظّف الرام الآن' ([System.Drawing.Color]::FromArgb(0, 150, 90))
+$btnRamClean = New-TweakButton 'نظّف الرام الآن' ([System.Drawing.Color]::FromArgb(0, 190, 215))
 $btnRamClean.Dock = 'Right'; $btnRamClean.Width = 200
 $chkRamAuto = New-Object System.Windows.Forms.CheckBox
 $chkRamAuto.Text = 'تنظيف تلقائي إذا تجاوز الرام'; $chkRamAuto.Dock = 'Left'; $chkRamAuto.Width = 220
@@ -2580,7 +2389,7 @@ $chkRamAuto.Padding = New-Object System.Windows.Forms.Padding(0, 14, 0, 0); $chk
 $numRamAuto = New-Object System.Windows.Forms.NumericUpDown
 $numRamAuto.Dock = 'Left'; $numRamAuto.Width = 70; $numRamAuto.Minimum = 50; $numRamAuto.Maximum = 95; $numRamAuto.Value = 85
 $numRamAuto.Margin = New-Object System.Windows.Forms.Padding(4, 9, 0, 0)
-$numRamAuto.BackColor = [System.Drawing.Color]::FromArgb(45, 48, 58); $numRamAuto.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$numRamAuto.BackColor = [System.Drawing.Color]::FromArgb(45, 48, 58); $numRamAuto.ForeColor = $script:Accent
 $numRamAuto.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
 $numRamAuto.BorderStyle = 'FixedSingle'
 $numRamAuto.TextAlign = 'Center'
@@ -2674,7 +2483,7 @@ $scFlow.Padding = New-Object System.Windows.Forms.Padding(20)
 $scTitle = New-Object System.Windows.Forms.Label
 $scTitle.Text = 'حماية الجهاز'; $scTitle.AutoSize = $true
 $scTitle.Font = New-Object System.Drawing.Font('Segoe UI', 18, [System.Drawing.FontStyle]::Bold)
-$scTitle.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$scTitle.ForeColor = $script:Accent
 $scFlow.Controls.Add($scTitle)
 $scDesc = New-Object System.Windows.Forms.Label
 $scDesc.AutoSize = $false; $scDesc.Width = 740; $scDesc.Height = 110; $scDesc.Margin = New-Object System.Windows.Forms.Padding(0, 12, 0, 0)
@@ -2683,7 +2492,7 @@ $scFlow.Controls.Add($scDesc)
 $btnScan = New-Object System.Windows.Forms.Button
 $btnScan.Text = "أداة فحص الجهاز
 MRT"; $btnScan.Width = 300; $btnScan.Height = 70; $btnScan.FlatStyle = 'Flat'; $btnScan.FlatAppearance.BorderSize = 0
-$btnScan.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 90); $btnScan.ForeColor = [System.Drawing.Color]::White
+$btnScan.BackColor = [System.Drawing.Color]::FromArgb(0, 190, 215); $btnScan.ForeColor = [System.Drawing.Color]::White
 $btnScan.Font = New-Object System.Drawing.Font('Segoe UI', 16, [System.Drawing.FontStyle]::Bold)
 $scFlow.Controls.Add($btnScan)
 function New-ScButton($text, $color) {
@@ -2752,13 +2561,13 @@ $wuFlow.Padding = New-Object System.Windows.Forms.Padding(20)
 $wuTitle = New-Object System.Windows.Forms.Label
 $wuTitle.Text = 'تحديث ويندوز'; $wuTitle.AutoSize = $true
 $wuTitle.Font = New-Object System.Drawing.Font('Segoe UI', 18, [System.Drawing.FontStyle]::Bold)
-$wuTitle.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$wuTitle.ForeColor = $script:Accent
 $wuFlow.Controls.Add($wuTitle)
 $wuBtns = New-Object System.Windows.Forms.FlowLayoutPanel
 $wuBtns.Width = 740; $wuBtns.Height = 70; $wuBtns.Margin = New-Object System.Windows.Forms.Padding(0, 12, 0, 0)
 $btnWuChk = New-Object System.Windows.Forms.Button
 $btnWuChk.Text = 'فحص التحديثات'; $btnWuChk.Width = 260; $btnWuChk.Height = 60; $btnWuChk.FlatStyle = 'Flat'; $btnWuChk.FlatAppearance.BorderSize = 0
-$btnWuChk.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 90); $btnWuChk.ForeColor = [System.Drawing.Color]::White
+$btnWuChk.BackColor = [System.Drawing.Color]::FromArgb(0, 190, 215); $btnWuChk.ForeColor = [System.Drawing.Color]::White
 $btnWuChk.Font = New-Object System.Drawing.Font('Segoe UI', 14, [System.Drawing.FontStyle]::Bold)
 $btnWuOpen = New-Object System.Windows.Forms.Button
 $btnWuOpen.Text = 'افتح تحديث ويندوز'; $btnWuOpen.Width = 260; $btnWuOpen.Height = 60; $btnWuOpen.FlatStyle = 'Flat'; $btnWuOpen.FlatAppearance.BorderSize = 0
@@ -2772,7 +2581,7 @@ $wuStatus.Margin = New-Object System.Windows.Forms.Padding(0, 6, 0, 6)
 $wuFlow.Controls.Add($wuStatus)
 $wuList = New-Object System.Windows.Forms.ListBox
 $wuList.Width = 740; $wuList.Height = 300; $wuList.RightToLeft = 'No'; $wuList.BorderStyle = 'None'
-$wuList.BackColor = [System.Drawing.Color]::FromArgb(32, 35, 42); $wuList.ForeColor = [System.Drawing.Color]::White
+$wuList.BackColor = [System.Drawing.Color]::FromArgb(16, 26, 40); $wuList.ForeColor = [System.Drawing.Color]::White
 $wuFlow.Controls.Add($wuList)
 
 $script:WuProc = $null; $script:WuOut = $null
@@ -2816,11 +2625,11 @@ $abFlow = New-Object System.Windows.Forms.FlowLayoutPanel
 $abFlow.Dock = 'Fill'; $abFlow.FlowDirection = 'TopDown'; $abFlow.WrapContents = $false; $abFlow.Padding = New-Object System.Windows.Forms.Padding(30, 24, 30, 0)
 $abTitle = New-Object System.Windows.Forms.Label
 $abTitle.Text = 'واجهة مرن'; $abTitle.AutoSize = $true
-$abTitle.Font = New-Object System.Drawing.Font('Segoe UI', 26, [System.Drawing.FontStyle]::Bold); $abTitle.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$abTitle.Font = New-Object System.Drawing.Font('Segoe UI', 26, [System.Drawing.FontStyle]::Bold); $abTitle.ForeColor = $script:Accent
 $abDesc = New-Object System.Windows.Forms.Label
 $abDesc.AutoSize = $false; $abDesc.Width = 700; $abDesc.Height = 300; $abDesc.Margin = New-Object System.Windows.Forms.Padding(0, 14, 0, 0)
 $abDesc.Font = New-Object System.Drawing.Font('Segoe UI', 12); $abDesc.ForeColor = [System.Drawing.Color]::FromArgb(225, 225, 230)
-$abDesc.Text = "مراقبة حيّة للمعالج والرام وكرت الشاشة والأقراص، وتنظيف بضغطة.`r`n`r`nتصليح ويندوز، تويكات حسب قوة الجهاز، تحكم ببرامج بدء التشغيل.`r`n`r`nتحميل يوتيوب وتحويل الفيديو، وتثبيت البرامج المشهورة.`r`n`r`nفحص الجهاز وتحديث ويندوز.`r`n`r`nالمجسّم الثلاثي الأبعاد بصفحة المراقبة يدور بالفأرة، ولونه يتغير حسب حمل جهازك."
+$abDesc.Text = "مراقبة حيّة للمعالج والرام وكرت الشاشة والأقراص، وتنظيف بضغطة.`r`n`r`nتصليح ويندوز، تويكات حسب قوة الجهاز، تحكم ببرامج بدء التشغيل.`r`n`r`nتحميل الفيديوهات من يوتيوب وتيك توك وانستقرام وتويتر، وتحويل الفيديو.`r`n`r`nفحص الجهاز وتحديث ويندوز.`r`n`r`nالمجسّم الثلاثي الأبعاد بصفحة المراقبة يدور بالفأرة، ولونه يتغير حسب حمل جهازك."
 $abFlow.Controls.Add($abTitle); $abFlow.Controls.Add($abDesc)
 $tabAb = New-Object System.Windows.Forms.TabPage 'واجهة مرن'
 $tabAb.BackColor = $form.BackColor; $tabAb.ForeColor = [System.Drawing.Color]::White
@@ -2839,7 +2648,7 @@ $abBtnChk.BackColor = [System.Drawing.Color]::FromArgb(0, 120, 190); $abBtnChk.F
 $abBtnChk.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
 $abBtnUpd = New-Object System.Windows.Forms.Button
 $abBtnUpd.Text = 'حدّث البرنامج الآن'; $abBtnUpd.Width = 240; $abBtnUpd.Height = 46; $abBtnUpd.FlatStyle = 'Flat'; $abBtnUpd.FlatAppearance.BorderSize = 0
-$abBtnUpd.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 90); $abBtnUpd.ForeColor = [System.Drawing.Color]::White
+$abBtnUpd.BackColor = [System.Drawing.Color]::FromArgb(0, 190, 215); $abBtnUpd.ForeColor = [System.Drawing.Color]::White
 $abBtnUpd.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold); $abBtnUpd.Visible = $false
 $abBtnUpd.Margin = New-Object System.Windows.Forms.Padding(0, 8, 0, 0)
 $abUpdStatus = New-Object System.Windows.Forms.Label
@@ -2874,39 +2683,57 @@ function Start-UpdateDownload {
     $j = $script:UpdInfo; $base = Get-UpdateBase
     $exeUrl = if ($j.url) { [string]$j.url } else { $base + '/واجهة مرن.exe' }
     $ps1Url = if ($j.ps1_url) { [string]$j.ps1_url } else { $base + '/Murn1.ps1' }
+    $icoUrl = if ($j.ico_url) { [string]$j.ico_url } else { '' }
+    $pngUrl = if ($j.png_url) { [string]$j.png_url } else { '' }
     if ($exeUrl -notmatch '^https://' -or $ps1Url -notmatch '^https://') { $abUpdStatus.ForeColor = [System.Drawing.Color]::Orange; $abUpdStatus.Text = 'رابط التحديث لازم يكون https'; return }
     $script:UpdPhase = 'download'; $abBtnUpd.Enabled = $false; $abBtnChk.Enabled = $false
     $abUpdStatus.ForeColor = [System.Drawing.Color]::LightGreen; $abUpdStatus.Text = 'جاري تنزيل التحديث...'
     $tmp = Join-Path $env:TEMP 'murn-update'
-    $dlCode = '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { if (Test-Path $Tmp) { Remove-Item $Tmp -Recurse -Force }; New-Item -ItemType Directory $Tmp | Out-Null; $ze = Join-Path $Tmp "new.exe"; $zp = Join-Path $Tmp "new.ps1"; (New-Object Net.WebClient).DownloadFile($ExeUrl, $ze); (New-Object Net.WebClient).DownloadFile($Ps1Url, $zp); $he = (Get-FileHash $ze -Algorithm SHA256).Hash; $hp = (Get-FileHash $zp -Algorithm SHA256).Hash; $Box.Json = "$he|$hp" } catch { $Box.Err = $_.Exception.Message }; $Box.Done = $true'
-    Start-UpdateBg $dlCode @{ ExeUrl = $exeUrl; Ps1Url = $ps1Url; Tmp = $tmp }
+    $dlCode = '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { if (Test-Path $Tmp) { Remove-Item $Tmp -Recurse -Force }; New-Item -ItemType Directory $Tmp | Out-Null; $ze = Join-Path $Tmp "new.exe"; $zp = Join-Path $Tmp "new.ps1"; (New-Object Net.WebClient).DownloadFile($ExeUrl, $ze); (New-Object Net.WebClient).DownloadFile($Ps1Url, $zp); $he = (Get-FileHash $ze -Algorithm SHA256).Hash; $hp = (Get-FileHash $zp -Algorithm SHA256).Hash; $hi = ""; $hg = ""; if ($IcoUrl) { $zi = Join-Path $Tmp "new.ico"; (New-Object Net.WebClient).DownloadFile($IcoUrl, $zi); $hi = (Get-FileHash $zi -Algorithm SHA256).Hash }; if ($PngUrl) { $zg = Join-Path $Tmp "new.png"; (New-Object Net.WebClient).DownloadFile($PngUrl, $zg); $hg = (Get-FileHash $zg -Algorithm SHA256).Hash }; $Box.Json = "$he|$hp|$hi|$hg" } catch { $Box.Err = $_.Exception.Message }; $Box.Done = $true'
+    Start-UpdateBg $dlCode @{ ExeUrl = $exeUrl; Ps1Url = $ps1Url; IcoUrl = $icoUrl; PngUrl = $pngUrl; Tmp = $tmp }
 }
 function Install-Update {
     $tmp = Join-Path $env:TEMP 'murn-update'; $newExe = Join-Path $tmp 'new.exe'; $newPs1 = Join-Path $tmp 'new.ps1'
     if (-not (Test-Path -LiteralPath $newExe) -or -not (Test-Path -LiteralPath $newPs1)) { throw 'ملف التحديث ناقص' }
     $parts = ([string]$script:UpdBox.Json) -split '\|'
     $gotExeHash = $parts[0]; $gotPs1Hash = $parts[1]
+    $gotIcoHash = if ($parts.Count -gt 2) { $parts[2] } else { '' }
+    $gotPngHash = if ($parts.Count -gt 3) { $parts[3] } else { '' }
     $expExeHash = [string]$script:UpdInfo.sha256
     $expPs1Hash = [string]$script:UpdInfo.ps1_sha256
+    $expIcoHash = [string]$script:UpdInfo.ico_sha256
+    $expPngHash = [string]$script:UpdInfo.png_sha256
     if ($expExeHash -and ($expExeHash.ToUpper() -ne $gotExeHash.ToUpper())) { throw 'ملف exe تالف أو مو مطابق' }
     if ($expPs1Hash -and ($expPs1Hash.ToUpper() -ne $gotPs1Hash.ToUpper())) { throw 'ملف Murn1.ps1 تالف أو مو مطابق' }
+    if ($expIcoHash -and $gotIcoHash -and ($expIcoHash.ToUpper() -ne $gotIcoHash.ToUpper())) { throw 'ملف الأيقونة تالف أو مو مطابق' }
+    if ($expPngHash -and $gotPngHash -and ($expPngHash.ToUpper() -ne $gotPngHash.ToUpper())) { throw 'ملف الشعار تالف أو مو مطابق' }
     $target = $env:MURN_EXE
     if (-not $target -or -not (Test-Path -LiteralPath $target)) {
         $target = (Get-ChildItem -LiteralPath $script:AppDir -Filter '*.exe' | Where-Object { $_.Name -notlike '*(*)*' } | Select-Object -First 1).FullName
     }
     if (-not $target) { throw 'ما قدرت ألقى ملف البرنامج الحالي عشان أستبدله' }
     $targetPs1 = Join-Path (Split-Path $target -Parent) 'Murn1.ps1'
+    $targetIco = Join-Path (Split-Path $target -Parent) 'falcon.ico'
+    $targetPng = Join-Path (Split-Path $target -Parent) 'falcon.png'
+    $newIco = Join-Path $tmp 'new.ico'; $newPng = Join-Path $tmp 'new.png'
+    $hasIco = (Test-Path -LiteralPath $newIco); $hasPng = (Test-Path -LiteralPath $newPng)
     $apply = Join-Path $tmp 'apply.ps1'
     $code = @'
-param($ProcId, $NewExe, $Target, $NewPs1, $TargetPs1)
+param($ProcId, $NewExe, $Target, $NewPs1, $TargetPs1, $NewIco, $TargetIco, $HasIco, $NewPng, $TargetPng, $HasPng)
 try { Wait-Process -Id $ProcId -Timeout 40 -ErrorAction SilentlyContinue } catch {}
 for ($i = 0; $i -lt 20; $i++) {
-    try { Copy-Item -LiteralPath $NewPs1 -Destination $TargetPs1 -Force -ErrorAction Stop; Copy-Item -LiteralPath $NewExe -Destination $Target -Force -ErrorAction Stop; break } catch { Start-Sleep -Milliseconds 500 }
+    try {
+        Copy-Item -LiteralPath $NewPs1 -Destination $TargetPs1 -Force -ErrorAction Stop
+        Copy-Item -LiteralPath $NewExe -Destination $Target -Force -ErrorAction Stop
+        if ($HasIco -eq 'True') { Copy-Item -LiteralPath $NewIco -Destination $TargetIco -Force -ErrorAction SilentlyContinue }
+        if ($HasPng -eq 'True') { Copy-Item -LiteralPath $NewPng -Destination $TargetPng -Force -ErrorAction SilentlyContinue }
+        break
+    } catch { Start-Sleep -Milliseconds 500 }
 }
 Start-Process $Target
 '@
     [IO.File]::WriteAllText($apply, $code, (New-Object Text.UTF8Encoding $true))
-    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$apply`"", $PID, "`"$newExe`"", "`"$target`"", "`"$newPs1`"", "`"$targetPs1`""
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$apply`"", $PID, "`"$newExe`"", "`"$target`"", "`"$newPs1`"", "`"$targetPs1`"", "`"$newIco`"", "`"$targetIco`"", $hasIco, "`"$newPng`"", "`"$targetPng`"", $hasPng
     $form.Close()
 }
 $updTimer = New-Object System.Windows.Forms.Timer; $updTimer.Interval = 400
@@ -2975,22 +2802,85 @@ try {
     function New-Col($r, $g, $b) { New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb($r, $g, $b)) }
 
     $grp = New-Object System.Windows.Media.Media3D.Model3DGroup
-    $amb = New-Object System.Windows.Media.Media3D.AmbientLight ([System.Windows.Media.Color]::FromRgb(90, 90, 100))
+    $amb = New-Object System.Windows.Media.Media3D.AmbientLight ([System.Windows.Media.Color]::FromRgb(100, 100, 112))
     $dl = New-Object System.Windows.Media.Media3D.DirectionalLight ([System.Windows.Media.Colors]::White), (New-Object System.Windows.Media.Media3D.Vector3D -1, -2, -1.5)
     $dl2 = New-Object System.Windows.Media.Media3D.DirectionalLight ([System.Windows.Media.Color]::FromRgb(80, 120, 200)), (New-Object System.Windows.Media.Media3D.Vector3D 2, 1, 1)
-    $grp.Children.Add($amb); $grp.Children.Add($dl); $grp.Children.Add($dl2)
-    # board, chip body, glowing core, gold pins
-    $grp.Children.Add((New-Box 0 -0.62 0 4.6 0.12 4.6 (New-Col 24 60 52)))
-    $grp.Children.Add((New-Box 0 -0.35 0 3.2 0.42 3.2 (New-Col 46 50 62)))
-    $grp.Children.Add((New-Box 0 -0.08 0 2.7 0.12 2.7 (New-Col 70 76 92)))
-    $script:ChipBrush = New-Col 0 190 110
-    $grp.Children.Add((New-Box 0 0.1 0 1.5 0.26 1.5 $script:ChipBrush))
-    $gold = New-Col 212 170 70
-    foreach ($i in -4..4) {
-        $o = $i * 0.34
-        $grp.Children.Add((New-Box $o -0.4 1.85 0.14 0.1 0.5 $gold)); $grp.Children.Add((New-Box $o -0.4 -1.85 0.14 0.1 0.5 $gold))
-        $grp.Children.Add((New-Box 1.85 -0.4 $o 0.5 0.1 0.14 $gold)); $grp.Children.Add((New-Box -1.85 -0.4 $o 0.5 0.1 0.14 $gold))
+    $dl3 = New-Object System.Windows.Media.Media3D.DirectionalLight ([System.Windows.Media.Color]::FromRgb(200, 160, 100)), (New-Object System.Windows.Media.Media3D.Vector3D -1, 1, 2)
+    $grp.Children.Add($amb); $grp.Children.Add($dl); $grp.Children.Add($dl2); $grp.Children.Add($dl3)
+
+    $cpuBrush = New-Col 255 179 64     # orange - matches the CPU accent in the reference model
+    $gpuBrush = New-Col 77 225 255     # cyan - GPU accent
+    $ramBrush = New-Col 199 125 255    # purple - RAM accent
+    $gold = New-Col 217 169 58
+    $script:ChipBrush = $cpuBrush      # CPU top color reacts to system load (set in Update-View)
+
+    # ---------- board + CPU socket (center, static) ----------
+    $grp.Children.Add((New-Box 0 -0.62 0 7.8 0.12 4.0 (New-Col 24 60 52)))
+    $grp.Children.Add((New-Box 0 -0.35 0 2.6 0.42 2.6 (New-Col 46 50 62)))
+    $grp.Children.Add((New-Box 0 -0.08 0 2.2 0.12 2.2 (New-Col 70 76 92)))
+    $grp.Children.Add((New-Box 0 0.1 0 1.2 0.26 1.2 $cpuBrush))
+    foreach ($i in -3..3) {
+        $o = $i * 0.3
+        $grp.Children.Add((New-Box $o -0.4 1.5 0.12 0.1 0.44 $gold)); $grp.Children.Add((New-Box $o -0.4 -1.5 0.12 0.1 0.44 $gold))
+        $grp.Children.Add((New-Box 1.5 -0.4 $o 0.44 0.1 0.12 $gold)); $grp.Children.Add((New-Box -1.5 -0.4 $o 0.44 0.1 0.12 $gold))
     }
+
+    # ---------- GPU card (its own group so it can detach/slide out) ----------
+    $gpuBaseX = -3.15; $gpuBaseY = 0; $gpuBaseZ = 0
+    $gpuLocal = New-Object System.Windows.Media.Media3D.Model3DGroup
+    $gpuBody = New-Col 16 18 22
+    $gpuLocal.Children.Add((New-Box 0 0.15 0 0.46 0.9 2.5 $gpuBody))
+    $gpuLocal.Children.Add((New-Box -0.25 0.15 0 0.05 0.9 2.5 $gpuBrush))
+    foreach ($i in -3..3) {
+        $gpuLocal.Children.Add((New-Box 0.26 -0.33 ($i * 0.32) 0.4 0.26 0.05 (New-Col 170 176 186)))
+    }
+    $gpuLocal.Children.Add((New-Box 0 -0.62 0 0.5 0.1 2.6 (New-Col 20 22 26)))
+
+    $fanRots = New-Object System.Collections.ArrayList
+    function Add-Fan($parentGrp, $fy, $fz) {
+        $hubGrp = New-Object System.Windows.Media.Media3D.Model3DGroup
+        $hubGrp.Children.Add((New-Box 0 0 0 0.08 0.18 0.18 (New-Col 10 11 14)))
+        foreach ($a in 0, 60, 120, 180, 240, 300) {
+            $bladeGrp = New-Object System.Windows.Media.Media3D.Model3DGroup
+            $bladeGrp.Children.Add((New-Box 0 0.24 0 0.05 0.42 0.17 (New-Col 60 66 78)))
+            $rot = New-Object System.Windows.Media.Media3D.AxisAngleRotation3D (New-Object System.Windows.Media.Media3D.Vector3D 1, 0, 0), $a
+            $bladeGrp.Transform = New-Object System.Windows.Media.Media3D.RotateTransform3D $rot
+            $hubGrp.Children.Add($bladeGrp)
+        }
+        $spinRot = New-Object System.Windows.Media.Media3D.AxisAngleRotation3D (New-Object System.Windows.Media.Media3D.Vector3D 1, 0, 0), 0
+        $spinGrp = New-Object System.Windows.Media.Media3D.Model3DGroup
+        $spinGrp.Children.Add($hubGrp)
+        $spinGrp.Transform = New-Object System.Windows.Media.Media3D.RotateTransform3D $spinRot
+        $mountGrp = New-Object System.Windows.Media.Media3D.Model3DGroup
+        $mountGrp.Children.Add($spinGrp)
+        $mountGrp.Transform = New-Object System.Windows.Media.Media3D.TranslateTransform3D 0.27, $fy, $fz
+        $mountGrp.Children.Add((New-Box 0.07 0 0 0.04 0.56 0.56 (New-Col 10 11 14)))
+        $parentGrp.Children.Add($mountGrp)
+        [void]$fanRots.Add($spinRot)
+    }
+    Add-Fan $gpuLocal 0.15 -0.68
+    Add-Fan $gpuLocal 0.15 0.68
+
+    $gpuTranslate = New-Object System.Windows.Media.Media3D.TranslateTransform3D $gpuBaseX, $gpuBaseY, $gpuBaseZ
+    $gpuGroup = New-Object System.Windows.Media.Media3D.Model3DGroup
+    $gpuGroup.Children.Add($gpuLocal)
+    $gpuGroup.Transform = $gpuTranslate
+    $grp.Children.Add($gpuGroup)
+
+    # ---------- RAM sticks (each its own group so it can lift and spread) ----------
+    $ramBody = New-Col 18 20 26
+    $ramBasePos = @(); $ramTranslates = New-Object System.Collections.ArrayList
+    foreach ($rz in -0.75, -0.25, 0.25, 0.75) {
+        $ramLocal = New-Object System.Windows.Media.Media3D.Model3DGroup
+        $ramLocal.Children.Add((New-Box 0 0 0 0.95 1.15 0.2 $ramBody))
+        $ramLocal.Children.Add((New-Box 0 0.6 0 0.95 0.08 0.2 $ramBrush))
+        $t = New-Object System.Windows.Media.Media3D.TranslateTransform3D 3.15, 0.3, $rz
+        $ramLocal.Transform = $t
+        $grp.Children.Add($ramLocal)
+        $ramBasePos += , (New-Object System.Windows.Media.Media3D.Point3D 3.15, 0.3, $rz)
+        [void]$ramTranslates.Add($t)
+    }
+
     $script:ChipRot = New-Object System.Windows.Media.Media3D.AxisAngleRotation3D (New-Object System.Windows.Media.Media3D.Vector3D 0, 1, 0), 30
     $tilt = New-Object System.Windows.Media.Media3D.AxisAngleRotation3D (New-Object System.Windows.Media.Media3D.Vector3D 1, 0, 0), 22
     $tg = New-Object System.Windows.Media.Media3D.Transform3DGroup
@@ -3014,12 +2904,44 @@ try {
             $script:ChipRot.Angle += ($p.X - $script:ChipDrag.X) * 0.8; $script:ChipDrag = $p
         }
     })
+    $monTopRow = New-Object System.Windows.Forms.Panel
+    $monTopRow.Dock = 'Top'; $monTopRow.Height = 140
     $chipHost = New-Object System.Windows.Forms.Integration.ElementHost
-    $chipHost.Dock = 'Top'; $chipHost.Height = 140; $chipHost.Child = $bg
-    $tabMon.Controls.Add($chipHost)
+    $chipHost.Dock = 'Left'; $chipHost.Width = 420; $chipHost.Height = 140; $chipHost.Child = $bg
+    $script:MonSummary = New-Object System.Windows.Forms.Label
+    $script:MonSummary.Dock = 'Fill'; $script:MonSummary.TextAlign = 'MiddleRight'
+    $script:MonSummary.Padding = New-Object System.Windows.Forms.Padding(16, 10, 16, 10)
+    $script:MonSummary.Font = New-Object System.Drawing.Font('Segoe UI', 11)
+    $script:MonSummary.ForeColor = $script:Pal.SubText
+    $script:MonSummary.Text = 'جاري التحقق من حالة الجهاز...'
+    $monTopRow.Controls.Add($script:MonSummary); $monTopRow.Controls.Add($chipHost)
+    $tabMon.Controls.Add($monTopRow)
 
-    $chipTimer = New-Object System.Windows.Forms.Timer; $chipTimer.Interval = 40
-    $chipTimer.Add_Tick({ if ($tabs.SelectedTab -eq $tabMon -and -not $script:ChipDrag) { $script:ChipRot.Angle += 1.2 } })
+    $script:Ex3T = 0.0; $script:FanSpeed = 0.0
+    $chipTimer = New-Object System.Windows.Forms.Timer; $chipTimer.Interval = 55
+    $chipTimer.Add_Tick({
+        if ($tabs.SelectedTab -eq $tabMon) {
+            $dt = 0.04; $script:Ex3T += $dt
+            if (-not $script:ChipDrag) { $script:ChipRot.Angle = 30 + 12 * [Math]::Sin($script:Ex3T * 0.3) }
+            $cyc = 9.0; $t = $script:Ex3T % $cyc
+            if ($t -lt 3.0) { $ex = 0.0; $fanTarget = 1.0 }
+            elseif ($t -lt 4.2) { $f = ($t - 3.0) / 1.2; $ex = $f; $fanTarget = 1.0 - $f }
+            elseif ($t -lt 5.2) { $ex = 1.0; $fanTarget = 0.0 }
+            elseif ($t -lt 7.4) { $f = ($t - 5.2) / 2.2; $ex = 1.0 - $f; $fanTarget = 0.0 }
+            else { $f = ($t - 7.4) / 1.6; $ex = 0.0; $fanTarget = $f }
+            $ex = $ex * $ex * (3 - 2 * $ex)
+            $gpuTranslate.OffsetX = $gpuBaseX - $ex * 1.3
+            $gpuTranslate.OffsetY = $gpuBaseY + $ex * 0.35
+            for ($k = 0; $k -lt $ramTranslates.Count; $k++) {
+                $b = $ramBasePos[$k]
+                $ramTranslates[$k].OffsetX = $b.X
+                $ramTranslates[$k].OffsetY = $b.Y + $ex * 1.1
+                $ramTranslates[$k].OffsetZ = $b.Z + ($k - 1.5) * $ex * 0.32
+            }
+            $script:FanSpeed = $script:FanSpeed + ($fanTarget * 16 - $script:FanSpeed) * 0.08
+            foreach ($fr in $fanRots) { $fr.Angle += $script:FanSpeed }
+        }
+    })
     $chipTimer.Start()
     $script:Chip3D = $true
 } catch { $script:Chip3D = $false; $script:Chip3DErr = $_.Exception.ToString(); if ($env:MURN_TEST) { Set-Content (Join-Path $env:MURN_TEST 'err3d.txt') $script:Chip3DErr } }
@@ -3052,7 +2974,6 @@ function Hide-Scroll($c, $side) {
 $scrollTimer = New-Object System.Windows.Forms.Timer; $scrollTimer.Interval = 400
 $scrollTimer.Add_Tick({ foreach ($h in $script:ScrollHosts) { if ($h.Visible) { Fit-Scroll $h } } })
 $scrollTimer.Start()
-Hide-Scroll $apFlow 'R'
 Hide-Scroll $lvT 'L'
 Hide-Scroll $stFlow 'R'
 Hide-Scroll $gFlow 'R'
@@ -3066,7 +2987,7 @@ Hide-Scroll $ytFlow 'R'
 # ---------- live stats (background runspace, so the window never lags) ----------
 $script:StatsBox = [hashtable]::Synchronized(@{ Rows = $null; Stop = $false; Active = $true })
 $bgScript = "function Get-LhmTemp {`n" + ${function:Get-LhmTemp}.ToString().Replace('$script:', '$global:') + "`n}`nfunction Get-Stats {`n" + ${function:Get-Stats}.ToString().Replace('$script:', '$global:') + "`n}`n" +
-    '$global:Lhm = $Lhm; $global:DiskTemps = @{}; $global:DiskTick = 99; while (-not $Box.Stop) { if (-not $Box.Active) { Start-Sleep -Milliseconds 400; continue }; try { $Box.Rows = @(Get-Stats) } catch {}; Start-Sleep -Milliseconds 1200 }'
+    '$global:Lhm = $Lhm; $global:DiskTemps = @{}; $global:DiskTick = 99; $gcTick = 0; while (-not $Box.Stop) { if (-not $Box.Active) { Start-Sleep -Milliseconds 400; continue }; try { $Box.Rows = @(Get-Stats) } catch {}; $gcTick++; if ($gcTick -ge 25) { $gcTick = 0; [System.GC]::Collect(); [System.GC]::WaitForPendingFinalizers() }; Start-Sleep -Milliseconds 2000 }'
 $script:BgRs = [runspacefactory]::CreateRunspace(); $script:BgRs.ApartmentState = 'MTA'; $script:BgRs.Open()
 $script:BgRs.SessionStateProxy.SetVariable('Box', $script:StatsBox)
 $script:BgRs.SessionStateProxy.SetVariable('Lhm', $script:Lhm)
@@ -3091,9 +3012,23 @@ function Update-View {
         $c.Invalidate()
     }
     $gFlow.ResumeLayout()
+    if ($script:MonSummary) {
+        $hot = @($rows | Where-Object { ($null -ne $_.Temp -and $_.Temp -ge 85) -or ([int]$_.Pct -ge 90) })
+        $warm = @($rows | Where-Object { ($null -ne $_.Temp -and $_.Temp -ge 70 -and $_.Temp -lt 85) -or ([int]$_.Pct -ge 75 -and [int]$_.Pct -lt 90) })
+        $cpuRow = $rows | Where-Object { $_.Kind -eq 'cpu' } | Select-Object -First 1
+        $ramRow = $rows | Where-Object { $_.Kind -eq 'ram' } | Select-Object -First 1
+        $lines = New-Object System.Collections.ArrayList
+        if ($hot.Count -gt 0) { [void]$lines.Add("⚠ فيه $($hot.Count) عنصر يحتاج انتباه (حرارة/استخدام مرتفع)") }
+        elseif ($warm.Count -gt 0) { [void]$lines.Add("كل شي طبيعي تقريباً، $($warm.Count) عنصر بحمل متوسط") }
+        else { [void]$lines.Add('كل مؤشرات جهازك طبيعية ✓') }
+        if ($cpuRow) { [void]$lines.Add("المعالج: $($cpuRow.Usage)") }
+        if ($ramRow) { [void]$lines.Add("الرام: $($ramRow.Usage)") }
+        [void]$lines.Add("عدد العناصر المراقَبة: $($rows.Count)")
+        $script:MonSummary.Text = ($lines -join "`r`n")
+    }
     if ($script:Chip3D -and $rows.Count) {
         $mx = [int](($rows | ForEach-Object { [int]$_.Pct } | Measure-Object -Maximum).Maximum)
-        $col = if ($mx -ge 90) { [System.Windows.Media.Color]::FromRgb(235, 70, 60) } elseif ($mx -ge 75) { [System.Windows.Media.Color]::FromRgb(240, 150, 30) } else { [System.Windows.Media.Color]::FromRgb(0, 190, 110) }
+        $col = if ($mx -ge 90) { [System.Windows.Media.Color]::FromRgb(235, 70, 60) } elseif ($mx -ge 75) { [System.Windows.Media.Color]::FromRgb(240, 150, 30) } else { [System.Windows.Media.Color]::FromRgb($script:Accent.R, $script:Accent.G, $script:Accent.B) }
         $script:ChipBrush.Color = $col
     }
 }
@@ -3106,83 +3041,229 @@ $form.Controls.Remove($tabs)
 $content = New-Object System.Windows.Forms.Panel
 $content.Dock = 'Fill'; $content.BackColor = $form.BackColor
 $titleBar = New-Object System.Windows.Forms.Panel
-$titleBar.Dock = 'Top'; $titleBar.Height = 54; $titleBar.BackColor = [System.Drawing.Color]::FromArgb(24, 26, 33)
+$titleBar.Dock = 'Top'; $titleBar.Height = 64; $titleBar.BackColor = [System.Drawing.Color]::FromArgb(16, 19, 26)
+$titleBar.Add_Paint({
+    param($s, $e)
+    $g = $e.Graphics
+    $rect = New-Object System.Drawing.Rectangle(0, 0, $s.Width, $s.Height)
+    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, [System.Drawing.Color]::FromArgb(22, 27, 37), [System.Drawing.Color]::FromArgb(13, 16, 22), [System.Drawing.Drawing2D.LinearGradientMode]::Vertical)
+    $g.FillRectangle($brush, $rect)
+    $pen = New-Object System.Drawing.Pen($script:Accent, 2)
+    $g.DrawLine($pen, 0, $s.Height - 1, $s.Width, $s.Height - 1)
+    $brush.Dispose(); $pen.Dispose()
+})
+
 $titleLbl = New-Object System.Windows.Forms.Label
 $titleLbl.Dock = 'Fill'; $titleLbl.TextAlign = 'MiddleRight'; $titleLbl.Padding = New-Object System.Windows.Forms.Padding(0, 0, 18, 0)
-$titleLbl.Font = New-Object System.Drawing.Font('Segoe UI', 16, [System.Drawing.FontStyle]::Bold)
-$titleLbl.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+$titleLbl.Font = New-Object System.Drawing.Font('Segoe UI', 15, [System.Drawing.FontStyle]::Bold)
+$titleLbl.ForeColor = [System.Drawing.Color]::White
+$titleLbl.BackColor = [System.Drawing.Color]::Transparent
+
+$verBadge = New-Object System.Windows.Forms.Panel
+$verBadge.Dock = 'Right'; $verBadge.Width = 76
+$verBadge.BackColor = [System.Drawing.Color]::Transparent
+$verBadge.Add_Paint({
+    param($s, $e)
+    $g = $e.Graphics
+    $g.SmoothingMode = 'AntiAlias'
+    $w = 62; $h = 26
+    $x = [int](($s.Width - $w) / 2); $y = [int](($s.Height - $h) / 2)
+    $rect = New-Object System.Drawing.Rectangle($x, $y, $w, $h)
+    $r = 5
+    $gp = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $gp.AddArc($rect.X, $rect.Y, $r * 2, $r * 2, 180, 90)
+    $gp.AddArc($rect.Right - $r * 2, $rect.Y, $r * 2, $r * 2, 270, 90)
+    $gp.AddArc($rect.Right - $r * 2, $rect.Bottom - $r * 2, $r * 2, $r * 2, 0, 90)
+    $gp.AddArc($rect.X, $rect.Bottom - $r * 2, $r * 2, $r * 2, 90, 90)
+    $gp.CloseFigure()
+    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(140, 220, 235), 1.4)
+    $g.DrawPath($pen, $gp)
+    $pen.Dispose(); $gp.Dispose()
+})
+$verLbl = New-Object System.Windows.Forms.Label
+$verLbl.Dock = 'Fill'; $verLbl.TextAlign = 'MiddleCenter'
+$verLbl.Font = New-Object System.Drawing.Font('Segoe UI', 8.5, [System.Drawing.FontStyle]::Bold)
+$verLbl.ForeColor = [System.Drawing.Color]::FromArgb(140, 220, 235)
+$verLbl.Text = 'v' + $script:AppVersion
+$verLbl.BackColor = [System.Drawing.Color]::Transparent
+$verBadge.Controls.Add($verLbl)
+
+$brandLbl = New-Object System.Windows.Forms.Label
+$brandLbl.Dock = 'Right'; $brandLbl.Width = 110; $brandLbl.TextAlign = 'MiddleRight'
+$brandLbl.Font = New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold)
+$brandLbl.ForeColor = $script:Accent
+$brandLbl.Text = 'واجهة مرن'
+$brandLbl.Padding = New-Object System.Windows.Forms.Padding(0, 0, 4, 0)
+$brandLbl.BackColor = [System.Drawing.Color]::Transparent
+
+$brandLogo = New-Object System.Windows.Forms.PictureBox
+$brandLogo.Dock = 'Right'; $brandLogo.Width = 56; $brandLogo.SizeMode = 'CenterImage'
+$brandLogo.BackColor = [System.Drawing.Color]::Transparent
+$logoPath2 = Join-Path $script:AppDir 'falcon.png'
+if (Test-Path $logoPath2) { $brandLogo.Image = [System.Drawing.Image]::FromFile($logoPath2) }
+
 $titleBar.Controls.Add($titleLbl)
+$titleBar.Controls.Add($verBadge)
+$titleBar.Controls.Add($brandLbl)
+$titleBar.Controls.Add($brandLogo)
 $tabs.Dock = 'None'
 $tabHost = New-Object System.Windows.Forms.Panel
 $tabHost.Dock = 'Fill'; $tabHost.BackColor = $form.BackColor
 $tabHost.Controls.Add($tabs)
 $tabHost.Add_Resize({ $tabs.SetBounds(-4, -5, $tabHost.Width + 8, $tabHost.Height + 9) })
-$content.Controls.Add($tabHost); $content.Controls.Add($titleBar)
 
-$side = New-Object System.Windows.Forms.Panel
-$side.Dock = 'Left'; $side.Width = 220; $side.BackColor = [System.Drawing.Color]::FromArgb(14, 15, 20)
-$sideHead = New-Object System.Windows.Forms.Panel
-$sideHead.Dock = 'Top'; $sideHead.Height = 120; $sideHead.BackColor = $side.BackColor
-$logoPath = Join-Path $script:AppDir 'falcon.png'
-if (Test-Path $logoPath) {
-    $logo = New-Object System.Windows.Forms.PictureBox
-    $logo.Image = [System.Drawing.Image]::FromFile($logoPath); $logo.SizeMode = 'Zoom'
-    $logo.Size = New-Object System.Drawing.Size(64, 64); $logo.Location = New-Object System.Drawing.Point(78, 12)
-    $sideHead.Controls.Add($logo)
-}
-$brand = New-Object System.Windows.Forms.Label
-$brand.Text = 'واجهة مرن'; $brand.TextAlign = 'MiddleCenter'; $brand.Dock = 'Bottom'; $brand.Height = 34
-$brand.Font = New-Object System.Drawing.Font('Segoe UI', 14, [System.Drawing.FontStyle]::Bold)
-$brand.ForeColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
-$sideHead.Controls.Add($brand)
+# ---------- top nav row (tabs as a horizontal strip under the title bar) + right-side vertical column ----------
+$navBar = New-Object System.Windows.Forms.Panel
+$navBar.Dock = 'Top'; $navBar.Height = 50; $navBar.BackColor = [System.Drawing.Color]::FromArgb(11, 14, 19)
+$navBar.Add_Paint({
+    param($s, $e)
+    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(28, 34, 44), 1)
+    $e.Graphics.DrawLine($pen, 0, $s.Height - 1, $s.Width, $s.Height - 1)
+    $pen.Dispose()
+})
+$navFlow = New-Object System.Windows.Forms.FlowLayoutPanel
+$navFlow.Dock = 'Fill'; $navFlow.FlowDirection = 'LeftToRight'; $navFlow.WrapContents = $false; $navFlow.AutoScroll = $false
+$navFlow.Padding = New-Object System.Windows.Forms.Padding(10, 6, 10, 6); $navFlow.BackColor = $navBar.BackColor
+$navBar.Controls.Add($navFlow)
 
-$nav = New-Object System.Windows.Forms.FlowLayoutPanel
-$nav.Dock = 'Fill'; $nav.FlowDirection = 'TopDown'; $nav.WrapContents = $false; $nav.AutoScroll = $true
-$nav.Padding = New-Object System.Windows.Forms.Padding(6, 6, 6, 6); $nav.BackColor = $side.BackColor; $nav.RightToLeft = 'No'
+$navSideW = 150
+$navSide = New-Object System.Windows.Forms.Panel
+$navSide.Dock = 'Right'; $navSide.Width = $navSideW; $navSide.BackColor = [System.Drawing.Color]::FromArgb(11, 14, 19)
+$navSide.Add_Paint({
+    param($s, $e)
+    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(28, 34, 44), 1)
+    $e.Graphics.DrawLine($pen, 0, 0, 0, $s.Height)
+    $pen.Dispose()
+})
+$navSideFlow = New-Object System.Windows.Forms.FlowLayoutPanel
+$navSideFlow.Dock = 'Fill'; $navSideFlow.FlowDirection = 'TopDown'; $navSideFlow.WrapContents = $false; $navSideFlow.AutoScroll = $true
+$navSideFlow.Padding = New-Object System.Windows.Forms.Padding(8, 10, 8, 10); $navSideFlow.BackColor = $navSide.BackColor
+$navSide.Controls.Add($navSideFlow)
+
 $script:NavBtns = New-Object System.Collections.ArrayList
 $navIcons = @{
-    'المراقبة والتنظيف' = 'mon'; 'أدوات التصليح' = 'fix'; 'تويكات ويندوز' = 'tweaks'; 'تطبيقات بدء التشغيل' = 'startup'
+    'الرئيسية' = 'mon'; 'أدوات التصليح' = 'fix'; 'تويكات ويندوز' = 'tweaks'; 'تطبيقات بدء التشغيل' = 'startup'
     'البرامج الشغالة' = 'procs'; 'الشاشات' = 'display'
-    'تحميل يوتيوب' = 'yt'; 'تحويل الفيديو' = 'conv'; 'تثبيت البرامج' = 'apps'; 'أدوات التنظيف' = 'tools'
+    'تحميل من المنصات' = 'yt'; 'تحويل الفيديو' = 'conv'; 'أدوات التنظيف' = 'tools'
     'فحص الجهاز' = 'shield'; 'تحديث ويندوز' = 'update'; 'واجهة مرن' = 'about'
 }
-foreach ($tp in @($tabs.TabPages)) {
+$navTopOrder = @('الرئيسية', 'أدوات التصليح', 'تويكات ويندوز', 'تطبيقات بدء التشغيل', 'البرامج الشغالة', 'الشاشات')
+$navSideOrder = @('تحميل من المنصات', 'تحويل الفيديو', 'أدوات التنظيف', 'فحص الجهاز', 'تحديث ويندوز', 'واجهة مرن')
+$allTabs = @($tabs.TabPages)
+$orderedTabs = @($navTopOrder + $navSideOrder | ForEach-Object { $t = $_; $allTabs | Where-Object { $_.Text -eq $t } })
+for ($i = 0; $i -lt $orderedTabs.Count; $i++) {
+    $tp = $orderedTabs[$i]
+    $inSide = $navSideOrder -contains $tp.Text
     $b = New-Object System.Windows.Forms.Button
-    $b.Text = '  ' + $tp.Text; $b.Width = 204; $b.Height = 46; $b.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, 3)
-    $b.FlatStyle = 'Flat'; $b.FlatAppearance.BorderSize = 0; $b.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(30, 33, 42)
-    $b.BackColor = $side.BackColor; $b.ForeColor = [System.Drawing.Color]::Gainsboro; $b.RightToLeft = 'No'
-    $b.Font = New-Object System.Drawing.Font('Segoe UI', 10.5)
+    $b.Text = '  ' + $tp.Text
+    $b.Margin = New-Object System.Windows.Forms.Padding(4, 3, 4, 3)
+    $b.FlatStyle = 'Flat'; $b.FlatAppearance.BorderSize = 0; $b.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(26, 30, 40)
+    $b.BackColor = $navBar.BackColor; $b.ForeColor = [System.Drawing.Color]::Gainsboro; $b.RightToLeft = 'No'
+    $b.Font = New-Object System.Drawing.Font('Segoe UI', 9.5)
     $b.TextAlign = 'MiddleRight'; $b.ImageAlign = 'MiddleRight'; $b.TextImageRelation = 'TextBeforeImage'
-    $b.Padding = New-Object System.Windows.Forms.Padding(0, 0, 10, 0)
-    $ik = $navIcons[$tp.Text]; if ($ik) { $b.Image = Get-Ico $ik 24 }
+    $b.Padding = New-Object System.Windows.Forms.Padding(10, 0, 10, 0)
+    $ik = $navIcons[$tp.Text]; if ($ik) { $b.Image = Get-Ico $ik 18 }
     $b.Tag = $tp
     $page = $tp
     $b.Add_Click({ $tabs.SelectedTab = $page }.GetNewClosure())
-    $nav.Controls.Add($b); [void]$script:NavBtns.Add($b)
+    if ($inSide) {
+        $b.AutoSize = $false; $b.Height = 38; $b.Width = ($navSideW - 24)
+        $navSideFlow.Controls.Add($b)
+    } else {
+        $b.AutoSize = $true; $b.Height = 38
+        $navFlow.Controls.Add($b)
+    }
+    [void]$script:NavBtns.Add($b)
 }
 function Update-Nav {
     foreach ($b in $script:NavBtns) {
         $act = ($b.Tag -eq $tabs.SelectedTab)
-        $b.BackColor = if ($act) { $script:Pal.NavActive } else { $script:Pal.Side }
-        $b.ForeColor = if ($act) { [System.Drawing.Color]::FromArgb(212, 170, 70) } else { $script:Pal.NavText }
+        $b.BackColor = if ($act) { $script:Pal.NavActive } else { $navBar.BackColor }
+        $b.ForeColor = if ($act) { $script:Accent } else { $script:Pal.NavText }
     }
     $titleLbl.Text = $tabs.SelectedTab.Text
     $script:StatsBox.Active = ($tabs.SelectedTab -eq $tabMon)
+    if ($script:Chip3D) {
+        if ($tabs.SelectedTab -eq $tabMon) { $chipTimer.Start() } else { $chipTimer.Stop() }
+    }
 }
 $tabs.Add_SelectedIndexChanged({ Update-Nav })
-$side.Controls.Add($nav); $side.Controls.Add($sideHead)
-$form.Controls.Add($content); $form.Controls.Add($side)
+$content.Controls.Add($tabHost); $content.Controls.Add($navSide); $content.Controls.Add($navBar); $content.Controls.Add($titleBar)
+$form.Controls.Add($content)
 Update-Nav
+
+# ---------- نمط البطاقة لصفحات النماذج (تحميل يوتيوب / تحويل الفيديو) على طريقة مداد ----------
+function Wrap-Input($tb) {
+    $parent = $tb.Parent; if (-not $parent) { return }
+    $idx = $parent.Controls.GetChildIndex($tb)
+    $box = New-Object System.Windows.Forms.Panel
+    $box.BackColor = $script:Pal.Input; $box.Margin = $tb.Margin
+    $box.Dock = $tb.Dock
+    $box.Padding = if ($tb.Multiline) { New-Object System.Windows.Forms.Padding(10, 8, 10, 8) } else { New-Object System.Windows.Forms.Padding(10, 6, 10, 2) }
+    $box.Size = New-Object System.Drawing.Size ($tb.Width), $(if ($tb.Multiline) { $tb.Height } else { [math]::Max(32, $tb.Height + 8) })
+    $box.Add_Paint({ param($s, $e) $pen = New-Object System.Drawing.Pen $script:Pal.CardBorder, 1; $e.Graphics.DrawRectangle($pen, 0, 0, $s.Width - 1, $s.Height - 1); $pen.Dispose() })
+    $parent.Controls.Remove($tb)
+    $tb.BorderStyle = 'None'; $tb.Dock = 'Fill'; $tb.BackColor = $script:Pal.Input; $tb.ForeColor = $script:Pal.Text
+    $box.Controls.Add($tb)
+    $parent.Controls.Add($box); $parent.Controls.SetChildIndex($box, $idx)
+}
+function Style-FormPage($tab, $flow) {
+    $tab.BackColor = $script:Pal.Bg; $tab.Padding = New-Object System.Windows.Forms.Padding(16, 14, 16, 14)
+    $flow.BackColor = $script:Pal.Card; $flow.ForeColor = $script:Pal.Text
+    $flow.Padding = New-Object System.Windows.Forms.Padding(26, 16, 26, 16)
+    $capFont = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
+    foreach ($c in @($flow.Controls)) {
+        if ($c.Width -eq 740) { $c.Width = 690 }
+        if ($c -is [System.Windows.Forms.Label] -and $c.AutoSize -and $c.ForeColor.ToArgb() -eq $flow.ForeColor.ToArgb()) {
+            $c.ForeColor = (C 150 190 220); $c.Font = $capFont
+        }
+        elseif ($c -is [System.Windows.Forms.CheckBox]) { $c.ForeColor = $script:Pal.Text }
+        elseif ($c -is [System.Windows.Forms.TextBox]) { Wrap-Input $c }
+        elseif ($c -is [System.Windows.Forms.ComboBox]) {
+            [void]$script:DarkInputCtrls.Remove($c)
+            $c.DrawMode = 'OwnerDrawFixed'; $c.ItemHeight = 24; $c.FlatStyle = 'Flat'
+            $c.BackColor = $script:Pal.Input; $c.ForeColor = $script:Pal.Text
+            $c.Add_DrawItem({
+                param($s, $e)
+                if ($e.Index -lt 0) { return }
+                $hot = ($e.State -band [System.Windows.Forms.DrawItemState]::Selected) -and -not ($e.State -band [System.Windows.Forms.DrawItemState]::ComboBoxEdit)
+                $bg = if ($hot) { C 0 70 92 } else { $script:Pal.Input }
+                $b = New-Object System.Drawing.SolidBrush $bg; $e.Graphics.FillRectangle($b, $e.Bounds); $b.Dispose()
+                $tb = New-Object System.Drawing.SolidBrush $script:Pal.Text
+                $f = New-Object System.Drawing.StringFormat; $f.LineAlignment = 'Center'; $f.FormatFlags = 'DirectionRightToLeft'; $f.Alignment = 'Near'
+                $r = New-Object System.Drawing.RectangleF ([single]($e.Bounds.X + 6)), ([single]$e.Bounds.Y), ([single]($e.Bounds.Width - 12)), ([single]$e.Bounds.Height)
+                $e.Graphics.DrawString([string]$s.Items[$e.Index], $s.Font, $tb, $r, $f); $tb.Dispose(); $f.Dispose()
+            })
+        }
+        elseif ($c -is [System.Windows.Forms.ProgressBar]) {
+            foreach ($d in $script:DarkProgressCtrls) { if ($d.Bar -eq $c) { $d.Track = $script:Pal.Track } }
+        }
+        if ($c -is [System.Windows.Forms.Panel]) {
+            $c.BackColor = $flow.BackColor
+            foreach ($m in @($c.Controls)) {
+                if ($m -is [System.Windows.Forms.TextBox]) { Wrap-Input $m }
+                elseif ($m -is [System.Windows.Forms.Button] -and $m.FlatAppearance.BorderSize -ne 0) {
+                    $m.BackColor = $script:Pal.Input; $m.ForeColor = $script:Pal.Text; $m.FlatAppearance.BorderColor = $script:Accent
+                }
+            }
+        }
+    }
+}
+Style-FormPage $tabYt $ytFlow
+Style-FormPage $tabCv $cvFlow
+foreach ($b in $btnDl, $btnCv) { $b.ForeColor = [System.Drawing.Color]::FromArgb(6, 14, 22) }
+foreach ($m in $YtStatus, $CvStatus) { $m.ForeColor = $script:Pal.SubText }
 
 # ---------- theme engine: Dark / Light, recolors every page including the native titlebar ----------
 try {
     Add-Type -Namespace Murn -Name Dwm -ErrorAction SilentlyContinue -MemberDefinition '[System.Runtime.InteropServices.DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(System.IntPtr hwnd, int attr, ref int value, int size);'
 } catch {}
 $script:ThemePairs = @(
-    @{ D = (C 20 22 28); L = (C 240 241 244) }, @{ D = (C 32 35 42); L = [System.Drawing.Color]::White }
-    @{ D = (C 16 17 20); L = [System.Drawing.Color]::White }, @{ D = (C 24 26 33); L = [System.Drawing.Color]::White }
-    @{ D = (C 14 15 20); L = (C 230 232 238) }, @{ D = (C 30 33 42); L = (C 218 221 230) }
-    @{ D = (C 30 33 41); L = (C 246 247 249) }, @{ D = (C 40 44 58); L = (C 255 241 214) }
+    @{ D = (C 10 17 27); L = (C 240 241 244) }, @{ D = (C 16 26 40); L = [System.Drawing.Color]::White }
+    @{ D = (C 8 13 21); L = [System.Drawing.Color]::White }, @{ D = (C 12 20 32); L = [System.Drawing.Color]::White }
+    @{ D = (C 8 14 22); L = (C 230 232 238) }, @{ D = (C 18 30 46); L = (C 218 221 230) }
+    @{ D = (C 22 36 54); L = (C 246 247 249) }, @{ D = (C 14 40 56); L = (C 255 241 214) }
+    @{ D = (C 30 50 72); L = (C 214 216 222) }, @{ D = (C 150 190 220); L = (C 70 80 95) }
     @{ D = [System.Drawing.Color]::White; L = (C 25 27 32) }
     @{ D = [System.Drawing.Color]::Gray; L = (C 90 92 100) }
     @{ D = [System.Drawing.Color]::Silver; L = (C 90 92 100) }
@@ -3205,16 +3286,16 @@ function Walk-Theme($ctrl, $toLight) {
     }
     foreach ($c in @($ctrl.Controls)) { Walk-Theme $c $toLight }
 }
+$script:ThemeApplied = 'dark'
 function Set-Theme($mode, $save) {
     $toLight = ($mode -eq 'light')
     $script:ThemeMode = $mode
     $script:Pal = if ($toLight) { $script:PalLight } else { $script:PalDark }
-    Walk-Theme $form $toLight
+    # التمرير على العناصر يلزم فقط عند التبديل بين الثيمين؛ عند الإقلاع بالداكن كان يحوّل كل نص أبيض إلى رمادي داكن
+    if ($mode -ne $script:ThemeApplied) { Walk-Theme $form $toLight; $script:ThemeApplied = $mode }
     Update-Nav
-    foreach ($c in @($gFlow.Controls)) { $c.BackColor = $script:Pal.Card; $c.Invalidate() }
+    foreach ($c in @($gFlow.Controls)) { $c.BackColor = $script:Pal.Bg; $c.Invalidate() }
     $gFlow.BackColor = $script:Pal.Bg
-    foreach ($c in @($apFlow.Controls)) { $c.BackColor = $script:Pal.Bg; $c.Invalidate() }
-    $apFlow.BackColor = $script:Pal.Bg
     try {
         $v = if ($toLight) { 0 } else { 1 }
         [void][Murn.Dwm]::DwmSetWindowAttribute($form.Handle, 20, [ref]$v, 4)
@@ -3268,10 +3349,10 @@ if (-not $env:MURN_TEST -or $env:MURN_SPLASH) {
     $splash = New-Object System.Windows.Forms.Form
     $splash.FormBorderStyle = 'None'; $splash.StartPosition = 'CenterScreen'
     $splash.Size = New-Object System.Drawing.Size(420, 150)
-    $splash.BackColor = [System.Drawing.Color]::FromArgb(20, 22, 28); $splash.TopMost = $true
+    $splash.BackColor = [System.Drawing.Color]::FromArgb(10, 17, 27); $splash.TopMost = $true
     if ($form.Icon) { $splash.Icon = $form.Icon }
     $spLine = New-Object System.Windows.Forms.Panel
-    $spLine.Dock = 'Top'; $spLine.Height = 3; $spLine.BackColor = [System.Drawing.Color]::FromArgb(212, 170, 70)
+    $spLine.Dock = 'Top'; $spLine.Height = 3; $spLine.BackColor = $script:Accent
     $splash.Controls.Add($spLine)
     $logoPath2 = Join-Path $script:AppDir 'falcon.png'
     if (Test-Path $logoPath2) {
@@ -3321,15 +3402,16 @@ if (-not $env:MURN_TEST -or $env:MURN_SPLASH) {
 if ($env:MURN_TEST) {
     $form.Show(); [System.Windows.Forms.Application]::DoEvents()
     $sw = [Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 6) { [System.Windows.Forms.Application]::DoEvents(); Update-View; Start-Sleep -Milliseconds 200 }
+    $warmup = if ($env:MURN_WARMUP) { [double]$env:MURN_WARMUP } else { 6 }
+    while ($sw.Elapsed.TotalSeconds -lt $warmup) { [System.Windows.Forms.Application]::DoEvents(); Update-View; Start-Sleep -Milliseconds 200 }
     $i = 0
     foreach ($tp in @($tabs.TabPages)) {
-        $tabs.SelectedTab = $tp; if ($tp -eq $tabAp) { $w2 = [Diagnostics.Stopwatch]::StartNew(); while ($w2.Elapsed.TotalSeconds -lt 9) { [System.Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 150 } }; Start-Sleep -Milliseconds 350; [System.Windows.Forms.Application]::DoEvents(); Update-View
+        $tabs.SelectedTab = $tp; Start-Sleep -Milliseconds 350; [System.Windows.Forms.Application]::DoEvents(); Update-View
         $bmp = New-Object System.Drawing.Bitmap $form.Width, $form.Height
         $form.DrawToBitmap($bmp, (New-Object System.Drawing.Rectangle 0, 0, $form.Width, $form.Height))
         $bmp.Save((Join-Path $env:MURN_TEST ("page{0:D2}.png" -f $i))); $bmp.Dispose(); $i++
     }
-    $form.Close(); exit
+    if ($env:MURN_HOLD) { $tabs.SelectedTab = $tabYt; while (-not $form.IsDisposed) { [System.Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 30 } } else { $form.Close(); exit }
 }
 
 if (-not $form.IsDisposed) { [void]$form.ShowDialog() }
