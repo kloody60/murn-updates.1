@@ -1,8 +1,12 @@
 {
-    "version":  "1.3.8",
-    "ps1_sha256":  "29BC147054613FBAFE15B06B89723C563F9C8438053E723C028E4C5F045DA95E",
-    "sha256":  "560F80DE23F613FB53BA8189F415815EC97763531D23137C7FFCE0BA3A8E9E0A",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.8/Murn1.ps1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.8/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
-    "notes":  "إخفاء سكرول بار القائمة الجانبية + تحديث أيقونة الواجهة"
+    "version":  "1.3.9",
+    "sha256":  null,
+    "ps1_sha256":  null,
+    "ico_sha256":  null,
+    "png_sha256":  null,
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/Murn1.ps1",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/falcon.ico",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/falcon.png",
+    "notes":  "تحديث تلقائي يجيب كمان أيقونة وشعار البرنامج الجديدين (كان التحديث يجيب البرنامج بس وتطلع الصورة قديمة)"
 }
