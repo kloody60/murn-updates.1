@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.0/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.0/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.0/Murn1.ps1",
-    "ps1_sha256":  "7576B03C8730BC8409D145385D7FCCB007D62816FC368F8722CDC82E352057E5",
-    "version":  "1.3.0",
-    "notes":  "حذفت تبويب \"تثبيت البرامج\" كامل، طوّرت المشهد ثلاثي الأبعاد ليشمل كرت الشاشة والرامات مع المعالج، ورتّبت التبويبات.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.0/falcon.ico",
-    "sha256":  "216979BE34CD878CF19DF3802C1FCDDD5FC9535353CAA3D16CC76B1F8CFB7255",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.2/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.2/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.2/Murn1.ps1",
+    "ps1_sha256":  "29CC25995CC6A9305DBBC90B00B97B2931DBDD82674DE4BFBD36C07174B0F36B",
+    "version":  "1.3.2",
+    "notes":  "البرنامج نفسه يطلع باسم وأيقونة \"واجهة مرن\" بتبويب البرامج الشغالة (مو powershell)، والمجسم ثلاثي الأبعاد صار يتوهج بألوان RGB متغيّرة.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.2/falcon.ico",
+    "sha256":  "4C6FAE5EECC8E2C1029BE9222410329445842B656CEFF2CEB81A6D567BFC0F11",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
