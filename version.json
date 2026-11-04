@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/Murn1.ps1",
-    "ps1_sha256":  "584D1BC0F44544F8260F3396CC9E52D334A0E57CEAFA737F8ED16B92C1251A4A",
-    "version":  "1.2.6",
-    "notes":  "بشريط العنوان: رقم الإصدار صار بجنب \"واجهة مرن\" قبل الشعار (مو بأقصى اليسار)، و\"واجهة مرن\" صارت أقرب لليمين.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/falcon.ico",
-    "sha256":  "12DF2182F1E0282285443F16459D27F0E6C0253D6AE1FCA9429B7DF184606E31",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/Murn1.ps1",
+    "ps1_sha256":  "488CB208E7BD585EEEDE4A994ECD6C0CE0DCFDA45AFF1136640749C2801445A8",
+    "version":  "1.2.7",
+    "notes":  "\"واجهة مرن\" صارت ملتصقة بالشعار بأقصى اليمين، ورقم الإصدار جنبها على يسارها.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.7/falcon.ico",
+    "sha256":  "CDF3CDFE7AB0D4EEA47E127FCB7E3E859223D658DB70D6FB010C95FFD9E4BC58",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
