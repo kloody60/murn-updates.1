@@ -1,8 +1,8 @@
 {
-    "version":  "1.3.5",
-    "ps1_sha256":  "436F0CDE430EA85B615C46BCF94C8468A0E0DFDAA1D7F2CD2261CA80627E0BCA",
-    "sha256":  "29510F0BE5D3542488D8F631946080AC662ECDAECBD4996425F0FB0F845372BD",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.5/Murn1.ps1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.5/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
-    "notes":  "شكل جديد لبطاقات المراقبة (حواف دائرية وتدرج وظل) بنفس ستايل بطاقات تثبيت البرامج"
+    "version":  "1.3.6",
+    "ps1_sha256":  "0A4246222D590FB71CD61E20862F534236F5F26DDDB7D58171ABD072F868FA34",
+    "sha256":  "5B5614215DABA76D5FE505878962DE18385C57398E88C12F5DC0A2714CB4DEC1",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.6/Murn1.ps1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.6/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
+    "notes":  "شارة قسم على كل بطاقة برنامج (مثل Steam)، وصفحة المراقبة صارت فيها ملخص سريع لحالة الجهاز جنب المجسم"
 }
