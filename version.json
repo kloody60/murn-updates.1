@@ -1,8 +1,8 @@
 {
-    "version":  "1.3.6",
-    "ps1_sha256":  "0A4246222D590FB71CD61E20862F534236F5F26DDDB7D58171ABD072F868FA34",
-    "sha256":  "5B5614215DABA76D5FE505878962DE18385C57398E88C12F5DC0A2714CB4DEC1",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.6/Murn1.ps1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.6/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
-    "notes":  "شارة قسم على كل بطاقة برنامج (مثل Steam)، وصفحة المراقبة صارت فيها ملخص سريع لحالة الجهاز جنب المجسم"
+    "version":  "1.3.7",
+    "ps1_sha256":  "22E763B236568581D71C8978E00D3208B2AE14BD3636DBA5270B6B9783D97609",
+    "sha256":  "CBAB946F7DA4C97B5B52C78C4A178839EF6D3DAF507341DE2E56B9D930684D72",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.7/Murn1.ps1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.7/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
+    "notes":  "كل الألوان الذهبية صارت أزرق سماوي: الشعار، الأيقونات، المجسم ثلاثي الأبعاد، والحالة الطبيعية بالمؤشرات والحرارة"
 }
