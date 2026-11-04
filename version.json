@@ -1,8 +1,8 @@
 {
-    "version":  "1.3.3",
-    "ps1_sha256":  "CF1B7BD2B9F2A53765B794E2901E7D2BF77B079CC0D74ACF3158C96142F6935F",
-    "sha256":  "31EFCCC2405A73FF2BE498B35AF410F54FBEEC4844865852CC3C7ADAC8CB5907",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/Murn1.ps1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.3/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
-    "notes":  "البرنامج يفتح بملء الشاشة تلقائي، ومفتاح الضوء الليلي صار بنفس شكل المفاتيح الثانية"
+    "version":  "1.3.4",
+    "ps1_sha256":  "B2618A439EC3B8FADC2C060F1D036DB9121DAA4BBA3536511EEDD99AB1C6A1B7",
+    "sha256":  "7673F13B05E4A9DE0E035261FDBA7D06069E6214DFBB08F2D7719F4210E1D00D",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.4/Murn1.ps1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.4/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
+    "notes":  "إصلاح: حقول تحويل الفيديو/تحميل يوتيوب/تثبيت البرامج صارت داكنة (ما تبين بيضاء)، ورجّعت فتح البرنامج بحجم عادي مو ملء الشاشة"
 }
