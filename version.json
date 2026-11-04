@@ -1,9 +1,9 @@
 {
     "version":  "1.3.9",
-    "sha256":  null,
-    "ps1_sha256":  null,
-    "ico_sha256":  null,
-    "png_sha256":  null,
+    "sha256":  "8DF5BE3B65C012511C9D259E46ECD492B458DAE1CA0C4F767600736D728471A8",
+    "ps1_sha256":  "C11B0522130FA8C2C1927B013BCD7863F859170C6F10B452F9A15EF78014036C",
+    "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6",
+    "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
     "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/Murn1.ps1",
     "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.9/falcon.ico",
