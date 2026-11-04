@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.5/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.5/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.5/Murn1.ps1",
-    "ps1_sha256":  "2656B84B986B78183A8629AB923297053A52B8331908C3FEF062885FADD5593B",
-    "version":  "1.2.5",
-    "notes":  "إصلاح: رابط التحديثات ما كان متضمّن بالنسخة exe الواحد، فكان يطلع \"رابط التحديثات غير مضبوط\". صار مضمّن الحين ويشتغل فحص وتنزيل التحديثات صح.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.5/falcon.ico",
-    "sha256":  "7220B7E185D8EE034CBE24D027654BB46C7C548BC377DB7D8270C29864179FD4",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/Murn1.ps1",
+    "ps1_sha256":  "584D1BC0F44544F8260F3396CC9E52D334A0E57CEAFA737F8ED16B92C1251A4A",
+    "version":  "1.2.6",
+    "notes":  "بشريط العنوان: رقم الإصدار صار بجنب \"واجهة مرن\" قبل الشعار (مو بأقصى اليسار)، و\"واجهة مرن\" صارت أقرب لليمين.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.2.6/falcon.ico",
+    "sha256":  "12DF2182F1E0282285443F16459D27F0E6C0253D6AE1FCA9429B7DF184606E31",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
