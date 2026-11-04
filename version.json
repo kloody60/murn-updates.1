@@ -2,7 +2,7 @@
     "version":  "1.3.1",
     "ps1_sha256":  "F2D838170C4B3F5C0D5F671F7EBA10E594CFF303C34A5D30C2AEC434ADBC51A7",
     "sha256":  "905076FE8FDED7F595BE494F092A62AA19D753BD4B412EB4694279F4C11C4F18",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/Murn1.ps1?v=1.3.1",
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe?v=1.3.1",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.1/Murn1.ps1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.3.1/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20%D9%85%D8%B1%D9%86.exe",
     "notes":  "إصلاح: التحديث التلقائي كان ما يحدث ملف البرنامج الفعلي (Murn1.ps1)، الآن يحدث الاثنين"
 }
