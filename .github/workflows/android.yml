@@ -1,0 +1,67 @@
+name: Build Android APK
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      # Signing key: put a base64 keystore in the repo secret MURN_KEYSTORE_B64 so updates install over old versions.
+      # Without the secret a throw-away key is generated (then uninstall the old app before installing a new build).
+      - name: Prepare signing key
+        env:
+          KS_B64: ${{ secrets.MURN_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > murn.keystore
+          else
+            keytool -genkeypair -keystore murn.keystore -alias murn -keyalg RSA -keysize 2048 -validity 36500 \
+              -storepass murn-downloader -keypass murn-downloader -dname "CN=Murn Downloader, O=Murn, C=SA"
+          fi
+
+      - name: Build release APK
+        run: gradle --no-daemon assembleRelease
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk ../Murn-Downloader.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Murn-Downloader-apk
+          path: Murn-Downloader.apk
+
+      # a stable download link you can open from the phone browser:
+      # https://github.com/<owner>/<repo>/releases/tag/android-latest
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          target_commitish: ${{ github.sha }}
+          name: مرن للتحميل - أندرويد (آخر نسخة)
+          body: |
+            حمّل الملف Murn-Downloader.apk وثبّته على الجوال (فعّل "التثبيت من مصادر غير معروفة" إذا طلب).
+            آخر تحديث من الكومت ${{ github.sha }}
+          files: Murn-Downloader.apk
+          prerelease: true

@@ -1,0 +1,7 @@
+build/
+.gradle/
+*.apk
+local.properties
+.idea/
+*.iml
+murn.keystore
