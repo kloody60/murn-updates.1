@@ -467,6 +467,15 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
                     TextButton(onClick = { selected.clear() }) { Text("إلغاء التحديد") }
                 }
                 Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = { onConfirm(selected.sorted().map { req.candidates[it] }) },
+                        enabled = selected.isNotEmpty(),
+                        modifier = Modifier.weight(1f).height(48.dp),
+                    ) { Text("تحميل المحدد (${selected.size})") }
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("إلغاء") }
+                }
+                Spacer(Modifier.height(8.dp))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.weight(1f),
@@ -512,15 +521,6 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
                             )
                         }
                     }
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        onClick = { onConfirm(selected.sorted().map { req.candidates[it] }) },
-                        enabled = selected.isNotEmpty(),
-                        modifier = Modifier.weight(1f).height(48.dp),
-                    ) { Text("تحميل المحدد (${selected.size})") }
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("إلغاء") }
                 }
             }
         }

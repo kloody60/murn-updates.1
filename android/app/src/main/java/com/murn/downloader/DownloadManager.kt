@@ -234,7 +234,7 @@ object DownloadManager {
         diagText.value = "جاري الفحص... (ياخذ نص دقيقة)"
         scope.launch {
             val sb = StringBuilder()
-            sb.appendLine("النسخة 1.0.3 · أندرويد ${Build.VERSION.RELEASE}")
+            sb.appendLine("النسخة 1.0.4 · أندرويد ${Build.VERSION.RELEASE}")
             sb.appendLine("المحرك: ${engineStatus.value}")
             fun probe(label: String, url: String) {
                 val r = try {
