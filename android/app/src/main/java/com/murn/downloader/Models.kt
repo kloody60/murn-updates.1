@@ -11,9 +11,6 @@ enum class Quality(val label: String, val audioFormat: String? = null, val heigh
     P1080("1080p", height = 1080),
     P720("720p", height = 720),
     P480("480p", height = 480),
-    P360("360p - توفير بيانات", height = 360),
-    P240("240p", height = 240),
-    P144("144p", height = 144),
     MP3("صوت فقط (MP3)", audioFormat = "mp3"),
     M4A("صوت فقط (M4A)", audioFormat = "m4a"),
 }

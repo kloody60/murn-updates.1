@@ -172,7 +172,7 @@ fun MainScreen() {
     var input by rememberSaveable { mutableStateOf("") }
     var limitText by rememberSaveable { mutableStateOf("200") }
     var pick by rememberSaveable { mutableStateOf(true) }
-    var zip by rememberSaveable { mutableStateOf(false) }
+    val zip = false // ZIP option removed from the screen
     var searchText by rememberSaveable { mutableStateOf("") }
     var searchInSite by rememberSaveable { mutableStateOf(false) }
     var qualityMenu by remember { mutableStateOf(false) }
@@ -299,7 +299,6 @@ fun MainScreen() {
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
                         CheckRow("أخليني أختار المقاطع (نافذة مربعات) إذا الرابط فيه مقاطع كثيرة", pick) { pick = it }
-                        CheckRow("اضغط كل المقاطع في ملف ZIP واحد (بدل ملفات منفصلة)", zip) { zip = it }
                         Button(
                             onClick = { scanLinks() },
                             enabled = input.isNotBlank(),
