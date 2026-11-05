@@ -128,17 +128,71 @@ object SocialFix {
 
     fun postId(url: String) = Regex("""/photo/(\d+)""").find(url)?.groupValues?.get(1) ?: "post"
 
-    /** The picture links of a TikTok photo post (reads the page's embedded JSON like a browser would). */
-    fun tiktokPhotos(url: String): List<String> {
-        val (_, html) = PageScan.fetch(url)
-        val out = LinkedHashSet<String>()
-        val m = Regex("""<script[^>]*id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>(.*?)</script>""", RegexOption.DOT_MATCHES_ALL).find(html)
-        if (m != null) runCatching { collectImages(JSONObject(m.groupValues[1]), out) }
-        if (out.isEmpty()) {
-            Regex("""<meta[^>]*property="og:image"[^>]*content="([^"]+)"""").find(html)
-                ?.groupValues?.get(1)?.replace("&amp;", "&")?.let { out += it }
+    private fun findObj(node: Any?, key: String): JSONObject? {
+        when (node) {
+            is JSONObject -> {
+                node.optJSONObject(key)?.let { return it }
+                for (k in node.keys()) findObj(node.opt(k), key)?.let { return it }
+            }
+            is JSONArray -> for (i in 0 until node.length()) findObj(node.opt(i), key)?.let { return it }
         }
-        return out.toList()
+        return null
+    }
+
+    /** What a TikTok page's data block says about the post. */
+    class TikTokPost(val title: String, val photos: List<String>, val videoUrl: String?, val found: Boolean)
+
+    fun parseTikTok(json: String): TikTokPost {
+        val root = runCatching { JSONObject(json) }.getOrNull() ?: return TikTokPost("", emptyList(), null, false)
+        val item = findObj(root, "itemStruct") ?: return TikTokPost("", emptyList(), null, false)
+        val title = item.optString("desc").trim()
+        val photos = LinkedHashSet<String>().also { collectImages(item, it) }.toList()
+        var video: String? = null
+        val v = item.optJSONObject("video")
+        if (v != null) {
+            video = listOf("playAddr", "downloadAddr").map { v.optString(it) }.firstOrNull { it.startsWith("http") }
+            if (video == null) {
+                val br = v.optJSONArray("bitrateInfo")
+                if (br != null) for (i in 0 until br.length()) {
+                    val l = br.optJSONObject(i)?.optJSONObject("PlayAddr")?.optJSONArray("UrlList")
+                    val u = l?.let { x -> (0 until x.length()).map { x.optString(it) }.firstOrNull { it.startsWith("http") } }
+                    if (u != null) { video = u; break }
+                }
+            }
+        }
+        return TikTokPost(title, photos, video?.replace("\\u002F", "/"), true)
+    }
+
+    /** Downloads [url] into [dest] sending the browser's cookies, reporting progress 0..1. */
+    fun downloadTo(url: String, dest: File, referer: String, cookie: String, cancelled: () -> Boolean, onProgress: (Float) -> Unit) {
+        val c = (URL(url).openConnection() as HttpURLConnection).apply {
+            setRequestProperty("User-Agent", MOBILE_UA)
+            setRequestProperty("Referer", referer)
+            if (cookie.isNotEmpty()) setRequestProperty("Cookie", cookie)
+            connectTimeout = 20_000
+            readTimeout = 30_000
+        }
+        try {
+            if (c.responseCode !in 200..299) error("HTTP ${c.responseCode}")
+            val total = c.contentLengthLong
+            var got = 0L
+            c.inputStream.use { ins ->
+                dest.outputStream().use { os ->
+                    val buf = ByteArray(64 * 1024)
+                    while (true) {
+                        if (cancelled()) throw InterruptedException()
+                        val n = ins.read(buf)
+                        if (n < 0) break
+                        os.write(buf, 0, n)
+                        got += n
+                        if (total > 0) onProgress(got.toFloat() / total)
+                    }
+                }
+            }
+            if (got == 0L) error("الملف فاضي")
+        } finally {
+            c.disconnect()
+        }
     }
 
     private fun collectImages(node: Any?, out: MutableSet<String>) {

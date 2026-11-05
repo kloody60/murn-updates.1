@@ -7,9 +7,12 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONArray
 import java.util.Collections
 
 /**
@@ -86,4 +89,44 @@ object WebSniff {
             ?: all.firstOrNull { it.contains(".mp4", true) }
             ?: all.firstOrNull()
     }
+
+    /**
+     * Opens [pageUrl] in the hidden browser and waits until the page contains the element [scriptId]
+     * (e.g. TikTok's __UNIVERSAL_DATA_FOR_REHYDRATION__ data block); returns that element's text, or null.
+     * A real browser engine gets through anti-bot pages that plain HTTP clients (yt-dlp) are refused by.
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    suspend fun pageData(ctx: Context, pageUrl: String, scriptId: String, timeoutMs: Long = 35_000): String? {
+        var web: WebView? = null
+        withContext(Dispatchers.Main) {
+            val w = WebView(ctx.applicationContext)
+            web = w
+            w.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                userAgentString = UA
+            }
+            CookieManager.getInstance().setAcceptCookie(true)
+            CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
+            w.webViewClient = WebViewClient()
+            w.loadUrl(pageUrl)
+        }
+        var result: String? = null
+        val start = System.currentTimeMillis()
+        while (result == null && System.currentTimeMillis() - start < timeoutMs) {
+            delay(800)
+            val r = CompletableDeferred<String?>()
+            withContext(Dispatchers.Main) {
+                web?.evaluateJavascript("(function(){var e=document.getElementById('$scriptId');return e?e.textContent:''})()") { v -> r.complete(v) }
+            }
+            val raw = withTimeoutOrNull(3000) { r.await() }
+            val text = raw?.let { runCatching { JSONArray("[$it]").getString(0) }.getOrNull() }.orEmpty()
+            if (text.length > 100) result = text
+        }
+        withContext(Dispatchers.Main) { runCatching { web?.stopLoading(); web?.destroy() } }
+        return result
+    }
+
+    /** Cookies the browser holds for [url] (sent along when downloading the file the page pointed to). */
+    fun cookiesFor(url: String): String = CookieManager.getInstance().getCookie(url).orEmpty()
 }

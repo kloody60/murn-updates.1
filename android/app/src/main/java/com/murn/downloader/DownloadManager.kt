@@ -478,15 +478,18 @@ object DownloadManager {
                 if (id in canceled || id in pausedIds || t is InterruptedException || t is YoutubeDL.CanceledException) throw t
                 val text = t.message.orEmpty()
                 val photoUrl = SocialFix.photoUrlIn(text) ?: item.url.takeIf { SocialFix.isTikTokPhoto(it) }
-                if (photoUrl != null) {
-                    // TikTok photo post (slideshow of pictures): yt-dlp has no extractor for it -> save the pictures
-                    if (downloadPhotoPost(id, item, tmp, photoUrl)) return
-                    try {
-                        runYtdlp(id, buildRequest(item.copy(url = SocialFix.asVideoUrl(photoUrl)), tmp))
+                val isTikTok = photoUrl != null || hostOf(item.url).contains("tiktok.")
+                if (isTikTok) {
+                    // yt-dlp cannot read TikTok photo posts, and TikTok often serves yt-dlp an anti-bot page ("Unable to
+                    // extract universal data"): open the post in the in-app browser and download from its data
+                    val done = try {
+                        tiktokViaBrowser(id, item, tmp, photoUrl ?: item.url)
                     } catch (t2: Throwable) {
                         if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
-                        throw PageProblem("هذا منشور صور من تيك توك: ما قدرت أقرأ الصور من الصفحة، وطريقة الفيديو فشلت أيضاً.\n${friendlyError(t2)}")
+                        if (t2 is PageProblem) throw t2
+                        throw PageProblem("تيك توك: ${t2.message ?: t2.javaClass.simpleName}\n${friendlyError(t)}")
                     }
+                    if (done) return
                 } else {
                 val blocked = text.contains("451") || text.contains("403") || text.contains("HTTP Error", true) ||
                         text.contains("Unsupported URL", true) || text.contains("Unable to extract", true) ||
@@ -548,29 +551,48 @@ object DownloadManager {
         }
     }
 
-    /** Saves the pictures of a TikTok photo post. true = done (item is DONE), false = no pictures found. */
-    private fun downloadPhotoPost(id: String, item: Item, tmp: File, photoUrl: String): Boolean {
-        update(id) { copy(title = "صور تيك توك", info = "جاري قراءة صور المنشور...", progress = 0f) }
-        val urls = try { SocialFix.tiktokPhotos(photoUrl) } catch (e: Throwable) { emptyList() }
-        if (urls.isEmpty()) return false
-        val post = SocialFix.postId(photoUrl)
-        val files = ArrayList<File>()
-        urls.forEachIndexed { i, u ->
-            if (id in canceled || id in pausedIds) throw InterruptedException()
-            update(id) { copy(progress = i / urls.size.toFloat(), info = "صورة ${i + 1} من ${urls.size}") }
-            files += SocialFix.download(u, tmp, "TikTok_${post}_${i + 1}")
-        }
-        for (f in files) {
-            if (item.zip) {
-                val stage = File(baseDir(), "zip/${item.batch}").apply { mkdirs() }
-                f.copyTo(File(stage, f.name), overwrite = true)
-            } else {
-                val mime = when (f.extension) { "png" -> "image/png"; "webp" -> "image/webp"; else -> "image/jpeg" }
-                saveToDownloads(f.name, mime) { out -> f.inputStream().use { it.copyTo(out) } }
+    /**
+     * TikTok through the in-app browser. true = a photo post was saved (item is DONE);
+     * false = a video file is now in [tmp] and the normal save step continues.
+     */
+    private suspend fun tiktokViaBrowser(id: String, item: Item, tmp: File, pageUrl: String): Boolean {
+        update(id) { copy(info = "جاري فتح تيك توك بالمتصفح الداخلي...", progress = 0f) }
+        val json = WebSniff.pageData(app, pageUrl, "__UNIVERSAL_DATA_FOR_REHYDRATION__")
+            ?: throw PageProblem("تيك توك ما رضي يفتح الصفحة (حماية ضد البرامج). جرّب تسجل دخولك من الإعدادات ← حسابات المنصات، أو غيّر الشبكة / شغّل VPN، وأعد المحاولة")
+        if (id in canceled || id in pausedIds) throw InterruptedException()
+        val post = SocialFix.parseTikTok(json)
+        if (!post.found) throw PageProblem("المنشور غير متاح (محذوف أو خاص أو محجوب في بلدك)")
+        val postTitle = post.title.ifBlank { "تيك توك" }
+        update(id) { copy(title = postTitle.take(120)) }
+
+        if (post.photos.isNotEmpty()) {
+            val postId = SocialFix.postId(pageUrl)
+            val files = ArrayList<File>()
+            post.photos.forEachIndexed { i, u ->
+                if (id in canceled || id in pausedIds) throw InterruptedException()
+                update(id) { copy(progress = i / post.photos.size.toFloat(), info = "صورة ${i + 1} من ${post.photos.size}") }
+                files += SocialFix.download(u, tmp, "TikTok_${postId}_${i + 1}")
             }
+            for (f in files) {
+                if (item.zip) {
+                    val stage = File(baseDir(), "zip/${item.batch}").apply { mkdirs() }
+                    f.copyTo(File(stage, f.name), overwrite = true)
+                } else {
+                    val mime = when (f.extension) { "png" -> "image/png"; "webp" -> "image/webp"; else -> "image/jpeg" }
+                    saveToDownloads(f.name, mime) { out -> f.inputStream().use { it.copyTo(out) } }
+                }
+            }
+            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = "${files.size} صورة") }
+            return true
         }
-        update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = "${files.size} صورة") }
-        return true
+
+        val video = post.videoUrl ?: throw PageProblem("لقيت المنشور بس ما لقيت رابط الفيديو فيه")
+        val dest = File(tmp, safeName(postTitle) + ".mp4")
+        SocialFix.downloadTo(
+            video, dest, "https://www.tiktok.com/", WebSniff.cookiesFor(video),
+            cancelled = { id in canceled || id in pausedIds },
+        ) { p -> update(id) { copy(progress = p, info = "جاري التحميل...") } }
+        return false
     }
 
     private fun hostOf(url: String): String = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
