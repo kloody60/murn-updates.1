@@ -76,7 +76,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -108,6 +113,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleShare(intent)
+        publishShareTarget()
         setContent {
             MurnTheme {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -120,6 +126,20 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShare(intent)
+    }
+
+    /** Registers Murn as a direct share target (shows up in the system share sheet). */
+    private fun publishShareTarget() {
+        runCatching {
+            val info = androidx.core.content.pm.ShortcutInfoCompat.Builder(this, "murn_share")
+                .setShortLabel("تحميل بمرن")
+                .setLongLived(true)
+                .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(this, R.drawable.ic_launcher))
+                .setIntent(Intent(this, MainActivity::class.java).setAction(Intent.ACTION_VIEW))
+                .setCategories(setOf("com.murn.downloader.category.SHARE_TARGET"))
+                .build()
+            androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(this, info)
+        }
     }
 
     private fun handleShare(i: Intent?) {
@@ -191,10 +211,33 @@ fun MainScreen() {
     LaunchedEffect(Unit) { Updater.check(ctx, silent = true) }
 
     // a link shared from another app lands in the box
+    // ("Share -> Murn" from TikTok / Instagram / YouTube ...) the link starts downloading right away
     LaunchedEffect(shared) {
         shared?.let {
-            input = if (input.isBlank()) it else input.trimEnd() + "\n" + it
             MainActivity.sharedText.value = null
+            val lim = limitText.trim().toIntOrNull()?.coerceIn(1, 200) ?: 200
+            val n = DownloadManager.addLinks(it, quality, lim, pick, false)
+            if (n > 0) Toast.makeText(ctx, "بدأ تحميل الرابط اللي شاركته", Toast.LENGTH_SHORT).show()
+            else input = if (input.isBlank()) it else input.trimEnd() + "\n" + it
+        }
+    }
+
+    // a link copied with "Copy link" in another app is put in the box when Murn opens
+    var clipCheck by remember { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        val lc = (ctx as? ComponentActivity)?.lifecycle
+        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) clipCheck++ }
+        lc?.addObserver(obs)
+        onDispose { lc?.removeObserver(obs) }
+    }
+    LaunchedEffect(clipCheck) {
+        delay(500) // the window must have focus before Android lets an app read the clipboard
+        val url = clipboard.getText()?.text?.let { DownloadManager.firstUrl(it) } ?: return@LaunchedEffect
+        val prefs = ctx.getSharedPreferences("murn", 0)
+        if (url != prefs.getString("lastClip", null) && !input.contains(url)) {
+            prefs.edit().putString("lastClip", url).apply()
+            input = if (input.isBlank()) url else input.trimEnd() + "\n" + url
+            Toast.makeText(ctx, "لقيت رابط منسوخ وحطيته في الخانة", Toast.LENGTH_SHORT).show()
         }
     }
 

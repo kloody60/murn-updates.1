@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- lets the system share sheet show "Murn" as a direct share target for text / links -->
+    <share-target android:targetClass="com.murn.downloader.MainActivity">
+        <data android:mimeType="text/plain" />
+        <category android:name="com.murn.downloader.category.SHARE_TARGET" />
+    </share-target>
+</shortcuts>
