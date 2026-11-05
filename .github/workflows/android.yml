@@ -28,14 +28,23 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
-      # Signing key: put a base64 keystore in the repo secret MURN_KEYSTORE_B64 so updates install over old versions.
-      # Without the secret a throw-away key is generated (then uninstall the old app before installing a new build).
+      # Signing key: every build MUST use the same key, otherwise the in-app update cannot install over the old app.
+      # 1) best: a base64 keystore in the repo secret MURN_KEYSTORE_B64
+      # 2) otherwise a key is generated once and kept in the Actions cache (restored on every later build)
+      - name: Restore signing key from cache
+        uses: actions/cache@v4
+        with:
+          path: android/murn.keystore
+          key: murn-keystore-v1
+
       - name: Prepare signing key
         env:
           KS_B64: ${{ secrets.MURN_KEYSTORE_B64 }}
         run: |
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 -d > murn.keystore
+          elif [ -s murn.keystore ]; then
+            echo "using the cached signing key"
           else
             keytool -genkeypair -keystore murn.keystore -alias murn -keyalg RSA -keysize 2048 -validity 36500 \
               -storepass murn-downloader -keypass murn-downloader -dname "CN=Murn Downloader, O=Murn, C=SA"
@@ -46,6 +55,15 @@ jobs:
 
       - name: Rename APK
         run: cp app/build/outputs/apk/release/app-release.apk ../Murn-Downloader.apk
+
+      # the app reads this file to know whether a newer version exists (in-app update)
+      - name: Write version.json
+        run: |
+          mkdir -p ../release
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          printf '{"versionCode": %s, "versionName": "%s", "notes": ""}\n' "$CODE" "$NAME" > ../release/version.json
+          cat ../release/version.json
 
       - uses: actions/upload-artifact@v4
         with:
@@ -63,5 +81,7 @@ jobs:
           body: |
             حمّل الملف Murn-Downloader.apk وثبّته على الجوال (فعّل "التثبيت من مصادر غير معروفة" إذا طلب).
             آخر تحديث من الكومت ${{ github.sha }}
-          files: Murn-Downloader.apk
+          files: |
+            Murn-Downloader.apk
+            release/version.json
           prerelease: true

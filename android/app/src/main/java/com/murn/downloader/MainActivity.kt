@@ -49,6 +49,9 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -163,6 +166,8 @@ fun MainScreen() {
     val paused by DownloadManager.paused.collectAsStateWithLifecycle()
     val shared by MainActivity.sharedText.collectAsStateWithLifecycle()
     val diag by DownloadManager.diagText.collectAsStateWithLifecycle()
+    val upd by Updater.state.collectAsStateWithLifecycle()
+    var showUpdate by remember { mutableStateOf(false) }
 
     var input by rememberSaveable { mutableStateOf("") }
     var limitText by rememberSaveable { mutableStateOf("200") }
@@ -180,6 +185,9 @@ fun MainScreen() {
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
+
+    // quietly look for a new version when the app opens; if there is one, the update icon gets a dot
+    LaunchedEffect(Unit) { Updater.check(ctx, silent = true) }
 
     // a link shared from another app lands in the box
     LaunchedEffect(shared) {
@@ -227,6 +235,13 @@ fun MainScreen() {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showUpdate = true; if (!Updater.hasUpdate) Updater.check(ctx) }) {
+                        if (Updater.hasUpdate) {
+                            BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.SystemUpdate, "تحديث التطبيق", tint = MaterialTheme.colorScheme.secondary) }
+                        } else {
+                            Icon(Icons.Filled.SystemUpdate, "تحديث التطبيق")
+                        }
+                    }
                     IconButton(onClick = { showSettings = true }) { Icon(Icons.Filled.Settings, "الإعدادات") }
                 },
             )
@@ -379,6 +394,53 @@ fun MainScreen() {
             text = {
                 SelectionContainer {
                     Text(report, modifier = Modifier.verticalScroll(rememberScrollState()), style = MaterialTheme.typography.bodySmall)
+                }
+            },
+        )
+    }
+
+    // ---------------------------------------------------- app update
+    if (showUpdate) {
+        AlertDialog(
+            onDismissRequest = { showUpdate = false; Updater.reset() },
+            confirmButton = {
+                when (val u = upd) {
+                    is Updater.State.Available ->
+                        Button(onClick = { Updater.download(ctx) }) { Text("حمّل وثبّت التحديث") }
+                    is Updater.State.Ready ->
+                        Button(onClick = { Updater.install(ctx, u.file) }) { Text("ثبّت الحين") }
+                    is Updater.State.Failed ->
+                        Button(onClick = { Updater.check(ctx) }) { Text("إعادة المحاولة") }
+                    else -> TextButton(onClick = { showUpdate = false; Updater.reset() }) { Text("تم") }
+                }
+            },
+            dismissButton = {
+                if (upd is Updater.State.Available || upd is Updater.State.Ready || upd is Updater.State.Failed)
+                    TextButton(onClick = { showUpdate = false; Updater.reset() }) { Text("لاحقاً") }
+            },
+            title = { Text("تحديث التطبيق") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("النسخة الحالية: ${Updater.currentName(ctx)}", style = MaterialTheme.typography.bodyMedium)
+                    when (val u = upd) {
+                        is Updater.State.Checking, Updater.State.Idle -> {
+                            LinearProgressIndicator(Modifier.fillMaxWidth())
+                            Text("جاري البحث عن تحديث...")
+                        }
+                        is Updater.State.UpToDate -> Text("عندك آخر نسخة، ما فيه تحديث جديد ✔")
+                        is Updater.State.Available -> {
+                            Text("يوجد تحديث جديد: ${u.name}", color = MaterialTheme.colorScheme.secondary)
+                            if (u.notes.isNotBlank()) Text(u.notes, style = MaterialTheme.typography.bodySmall)
+                            Text("بينزل الملف (حوالي 105 ميجا) وبعدها يطلع لك تثبيت أندرويد، اضغط تثبيت وتتحدث النسخة فوق القديمة وتبقى إعداداتك.",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        is Updater.State.Downloading -> {
+                            LinearProgressIndicator(progress = { u.percent / 100f }, modifier = Modifier.fillMaxWidth())
+                            Text("جاري تنزيل ${u.name}... ${u.percent}%")
+                        }
+                        is Updater.State.Ready -> Text("نزل التحديث ${u.name}. اضغط «ثبّت الحين» (إذا طلب السماح بالتثبيت من هذا التطبيق فعّله وارجع).")
+                        is Updater.State.Failed -> Text(u.msg, color = MaterialTheme.colorScheme.error)
+                    }
                 }
             },
         )
