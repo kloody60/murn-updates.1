@@ -234,7 +234,7 @@ object DownloadManager {
         diagText.value = "جاري الفحص... (ياخذ نص دقيقة)"
         scope.launch {
             val sb = StringBuilder()
-            sb.appendLine("النسخة 1.0.4 · أندرويد ${Build.VERSION.RELEASE}")
+            sb.appendLine("النسخة 1.0.5 · أندرويد ${Build.VERSION.RELEASE}")
             sb.appendLine("المحرك: ${engineStatus.value}")
             fun probe(label: String, url: String) {
                 val r = try {
@@ -466,25 +466,25 @@ object DownloadManager {
             if (!ready.await()) error("المحرك غير جاهز")
             if (id in canceled) throw InterruptedException()
 
-            val req = buildRequest(item, tmp)
-            var last = 0L
-            YoutubeDL.getInstance().execute(req, id) { p, eta, line ->
-                val now = SystemClock.elapsedRealtime()
-                if (now - last < 400 && p < 100f) return@execute
-                last = now
-                val speed = SPEED_RE.find(line)?.groupValues?.get(1)
-                val etaText = if (eta > 0) "متبقي ${fmtEta(eta)}" else null
-                val processing = p < 0 && (line.startsWith("[Merger]") || line.startsWith("[ExtractAudio]") ||
-                        line.startsWith("[VideoConvertor]") || line.startsWith("[Fixup"))
-                update(id) {
-                    copy(
-                        progress = if (p >= 0) p / 100f else progress,
-                        info = when {
-                            processing -> "جاري الدمج / التحويل..."
-                            speed != null || etaText != null -> listOfNotNull(speed, etaText).joinToString(" · ")
-                            else -> info
-                        },
-                    )
+            try {
+                runYtdlp(id, buildRequest(item, tmp))
+            } catch (t: Throwable) {
+                if (id in canceled || id in pausedIds || t is InterruptedException || t is YoutubeDL.CanceledException) throw t
+                val text = t.message.orEmpty()
+                val blocked = text.contains("451") || text.contains("403") ||
+                        text.contains("Unsupported URL", true) || text.contains("Unable to extract", true)
+                if (!blocked || isBigHost(hostOf(item.url))) throw t
+                // the site refuses yt-dlp's requests: read the page like a browser would, find the video file in it,
+                // and hand that direct link to yt-dlp (with the page as referer)
+                update(id) { copy(info = "جاري المحاولة بطريقة المتصفح...", progress = 0f) }
+                val media = try { MediaFind.find(item.url, item.quality) } catch (e: Throwable) {
+                    throw PageProblem("${friendlyError(t)}\n(قراءة الصفحة بطريقة المتصفح فشلت: ${e.message ?: e.javaClass.simpleName})")
+                } ?: throw PageProblem("${friendlyError(t)}\n(قرأت الصفحة بطريقة المتصفح وما لقيت رابط الفيديو فيها)")
+                try {
+                    runYtdlp(id, buildRequest(item, tmp, media, item.url))
+                } catch (t2: Throwable) {
+                    if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
+                    throw PageProblem("المحاولة الأولى: ${friendlyError(t)}\n\nبطريقة المتصفح: ${friendlyError(t2)}")
                 }
             }
             if (id in canceled || id in pausedIds) throw InterruptedException()
@@ -523,9 +523,42 @@ object DownloadManager {
         }
     }
 
-    private fun buildRequest(item: Item, tmp: File): YoutubeDLRequest {
+    private fun hostOf(url: String): String = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
+
+    private fun isBigHost(host: String): Boolean =
+        listOf("youtube.", "youtu.be", "tiktok.", "instagram.", "twitter.", "x.com", "facebook.").any { host.contains(it) }
+
+    private fun safeName(title: String): String =
+        title.replace(Regex("[\\\\/:*?\"<>|%\\r\\n]"), " ").replace(Regex("\\s+"), " ").trim().take(100).ifBlank { "video" }
+
+    /** Runs one yt-dlp download of [req] for item [id], pushing progress into the list. */
+    private fun runYtdlp(id: String, req: YoutubeDLRequest) {
+        var last = 0L
+        YoutubeDL.getInstance().execute(req, id) { p, eta, line ->
+            val now = SystemClock.elapsedRealtime()
+            if (now - last < 400 && p < 100f) return@execute
+            last = now
+            val speed = SPEED_RE.find(line)?.groupValues?.get(1)
+            val etaText = if (eta > 0) "متبقي ${fmtEta(eta)}" else null
+            val processing = p < 0 && (line.startsWith("[Merger]") || line.startsWith("[ExtractAudio]") ||
+                    line.startsWith("[VideoConvertor]") || line.startsWith("[Fixup"))
+            update(id) {
+                copy(
+                    progress = if (p >= 0) p / 100f else progress,
+                    info = when {
+                        processing -> "جاري الدمج / التحويل..."
+                        speed != null || etaText != null -> listOfNotNull(speed, etaText).joinToString(" · ")
+                        else -> info
+                    },
+                )
+            }
+        }
+    }
+
+    private fun buildRequest(item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null): YoutubeDLRequest {
         val q = item.quality
-        return YoutubeDLRequest(item.url).apply {
+        val host = hostOf(item.url)
+        return YoutubeDLRequest(mediaUrl ?: item.url).apply {
             addOption("--no-playlist")
             addOption("--no-mtime")
             addOption("--newline")
@@ -533,7 +566,13 @@ object DownloadManager {
             addOption("--retries", 5)
             addOption("--fragment-retries", 5)
             addOption("--socket-timeout", 30)
-            addOption("-o", File(tmp, "%(title).100s.%(ext)s").absolutePath)
+            // a direct media link has no real title, so name the file after the video we picked
+            addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) else "%(title).100s") + ".%(ext)s").absolutePath)
+            if (!isBigHost(host)) {
+                // ordinary sites: look like the phone's browser
+                addOption("--user-agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
+                addOption("--referer", referer ?: (runCatching { java.net.URL(item.url).let { it.protocol + "://" + it.host + "/" } }.getOrNull() ?: item.url))
+            }
             val audio = q.audioFormat
             if (audio != null) {
                 addOption("-f", if (audio == "m4a") "ba[ext=m4a]/ba/b" else "ba/b")
