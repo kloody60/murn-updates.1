@@ -1,11 +1,11 @@
 {
-  "versionCode": 1,
-  "versionName": "1.0.0",
-  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.0/MurnVideo-1.0.0.apk",
-  "sha256": "01c9fc404f866e130c6243ddc8ec3b40975aac7707d099f7b70ec51fe14e6184",
-  "sizeBytes": 3042546,
+  "versionCode": 2,
+  "versionName": "1.0.1",
+  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.1/MurnVideo-1.0.1.apk",
+  "sha256": "7173fcc973a22ef57be7c1d0a93a3894f5c5f86cb73d86a731748acf72082bc6",
+  "sizeBytes": 3043754,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "الإصدار الأول: رفع الدقة حتى 4K، إزالة الضجيج، الشحذ التكيّفي، ومعاينة حية قبل المعالجة.",
-  "notes_en": "First release: upscale up to 4K, denoise, adaptive sharpening and live preview."
+  "notes": "تغيير الاسم إلى «مرن لتعديل» وشعار جديد يرمز لتعديل الفيديو.",
+  "notes_en": "Renamed to “Murn Editor” with a new video-editing logo."
 }
