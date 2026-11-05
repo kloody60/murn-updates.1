@@ -1,5 +1,6 @@
 # Builds Murn-Downloader.apk on Windows with a temporary Android toolchain (nothing is installed system-wide).
-# Everything goes to C:\MurnApk (JDK 17 + Android SDK + Gradle). First run downloads about 1.5 GB and takes 10-20 minutes.
+# Everything goes to C:\MurnApk (JDK 17 + Android SDK + Gradle + Gradle cache). Nothing is installed system-wide,
+# no environment variable is changed permanently (they only live inside this script's window). First run downloads about 1.5 GB and takes 10-20 minutes.
 # Later runs are fast. Delete C:\MurnApk any time to remove it all.
 
 $ErrorActionPreference = 'Stop'
@@ -21,6 +22,9 @@ function Download($url, $dest) {
 try {
     if (-not (Test-Path (Join-Path $proj 'build.gradle.kts'))) { throw "build.gradle.kts not found. Keep this script inside the 'android' folder." }
     New-Item -ItemType Directory -Force -Path $work | Out-Null
+    # keep EVERYTHING inside C:\MurnApk: Gradle's cache too, so nothing touches an existing Java / Android Studio / Gradle setup
+    $env:GRADLE_USER_HOME = Join-Path $work 'gradle-home'
+    $env:ANDROID_USER_HOME = Join-Path $work 'android-home'
 
     # ---- JDK 17
     Step 'JDK 17'

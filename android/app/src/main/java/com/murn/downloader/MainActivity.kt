@@ -214,7 +214,13 @@ fun MainScreen() {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("مرن · محمّل الفيديوهات") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Download, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("مرن · محمّل الفيديوهات")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showSettings = true }) { Icon(Icons.Filled.Settings, "الإعدادات") }
                 },
