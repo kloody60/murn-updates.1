@@ -488,15 +488,22 @@ object DownloadManager {
                         throw PageProblem("هذا منشور صور من تيك توك: ما قدرت أقرأ الصور من الصفحة، وطريقة الفيديو فشلت أيضاً.\n${friendlyError(t2)}")
                     }
                 } else {
-                val blocked = text.contains("451") || text.contains("403") ||
-                        text.contains("Unsupported URL", true) || text.contains("Unable to extract", true)
+                val blocked = text.contains("451") || text.contains("403") || text.contains("HTTP Error", true) ||
+                        text.contains("Unsupported URL", true) || text.contains("Unable to extract", true) ||
+                        text.contains("No video formats", true) || text.contains("Unable to download webpage", true)
                 if (!blocked || isBigHost(hostOf(item.url))) throw t
                 // the site refuses yt-dlp's requests: read the page like a browser would, find the video file in it,
                 // and hand that direct link to yt-dlp (with the page as referer)
                 update(id) { copy(info = "جاري المحاولة بطريقة المتصفح...", progress = 0f) }
-                val media = try { MediaFind.find(item.url, item.quality) } catch (e: Throwable) {
-                    throw PageProblem("${friendlyError(t)}\n(قراءة الصفحة بطريقة المتصفح فشلت: ${e.message ?: e.javaClass.simpleName})")
-                } ?: throw PageProblem("${friendlyError(t)}\n(قرأت الصفحة بطريقة المتصفح وما لقيت رابط الفيديو فيها)")
+                var media: String? = runCatching { MediaFind.find(item.url, item.quality) }.getOrNull()
+                if (media == null) {
+                    // the video is built by JavaScript: open the page in the in-app browser and catch the stream
+                    update(id) { copy(info = "جاري فتح الصفحة بالمتصفح الداخلي والتقاط الفيديو...", progress = 0f) }
+                    media = try { WebSniff.find(app, item.url) } catch (e: Throwable) { null }
+                }
+                if (id in canceled || id in pausedIds) throw InterruptedException()
+                if (media == null) throw PageProblem(
+                    "${friendlyError(t)}\n(جرّبت قراءة الصفحة والمتصفح الداخلي وما لقيت رابط فيديو. ممكن الفيديو محمي أو يحتاج تسجيل دخول)")
                 try {
                     runYtdlp(id, buildRequest(item, tmp, media, item.url))
                 } catch (t2: Throwable) {
