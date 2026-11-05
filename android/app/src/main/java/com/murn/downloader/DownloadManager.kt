@@ -24,19 +24,28 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import java.io.File
+import java.io.OutputStream
+import java.text.SimpleDateFormat
 import java.util.Collections
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /**
  * The whole download queue lives here (one process-wide instance), so it keeps working
  * while the screen is off / the activity is closed, as long as [DownloadService] keeps the process alive.
  *
- * Flow for every pasted link:
- *   1. RESOLVING : yt-dlp lists the link (a single video, or a playlist / channel with 60-70+ videos)
- *   2. every video becomes its own QUEUED row with its own progress bar
- *   3. up to [parallel] rows download at the same time (RUNNING)
- *   4. the finished file is copied into  Downloads/Murn  (DONE)
+ * Flow for every pasted link / search:
+ *   1. RESOLVING : yt-dlp lists it (single video, playlist, channel...). Sites yt-dlp does not know are
+ *                  read as a normal web page ([PageScan]) and their thumbnail links are listed.
+ *   2. >1 video  : the picker (thumbnail grid) opens so you tick what you want  (or everything is queued directly)
+ *   3. every chosen video is its own QUEUED row with its own progress bar
+ *   4. up to [parallel] rows download at the same time (RUNNING)
+ *   5. the finished file goes to  Downloads/Murn  (DONE) - or, in ZIP mode, into one ZIP when the batch finishes
  */
 object DownloadManager {
     private lateinit var app: Application
@@ -44,14 +53,18 @@ object DownloadManager {
     private val resolveGate = Semaphore(2)
     private val jobs = ConcurrentHashMap<String, Job>()
     private val canceled: MutableSet<String> = Collections.synchronizedSet(HashSet())
+    private val pausedIds: MutableSet<String> = Collections.synchronizedSet(HashSet())
     private val ready = CompletableDeferred<Boolean>()
     private val pumpLock = Any()
+    private val zipLock = Any()
 
     val items = MutableStateFlow<List<Item>>(emptyList())
+    val pickers = MutableStateFlow<List<PickerRequest>>(emptyList())
     val engineStatus = MutableStateFlow("جاري تجهيز المحرك (أول مرة ياخذ شوي)...")
     val engineBusy = MutableStateFlow(true)
-    val parallel = MutableStateFlow(2)
+    val parallel = MutableStateFlow(3)
     val quality = MutableStateFlow(Quality.P1080)
+    val paused = MutableStateFlow(false)
 
     // ------------------------------------------------------------------ setup
 
@@ -59,8 +72,11 @@ object DownloadManager {
         if (::app.isInitialized) return
         app = application
         val p = app.getSharedPreferences("murn", 0)
-        parallel.value = p.getInt("parallel", 2).coerceIn(1, 4)
+        parallel.value = p.getInt("parallel", 3).coerceIn(1, 16)
         quality.value = Quality.entries.firstOrNull { it.name == p.getString("quality", null) } ?: Quality.P1080
+        // leftovers of a killed run
+        File(baseDir(), "tmp").deleteRecursively()
+        File(baseDir(), "zip").deleteRecursively()
 
         scope.launch {
             try {
@@ -80,6 +96,8 @@ object DownloadManager {
             }
         }
     }
+
+    private fun baseDir(): File = app.getExternalFilesDir(null) ?: app.filesDir
 
     private fun engineVersion(): String =
         runCatching { YoutubeDL.getInstance().versionName(app) }.getOrNull().orEmpty().ifBlank { "yt-dlp" }
@@ -109,7 +127,7 @@ object DownloadManager {
     // ------------------------------------------------------------------ settings
 
     fun setParallel(n: Int) {
-        parallel.value = n.coerceIn(1, 4)
+        parallel.value = n.coerceIn(1, 16)
         app.getSharedPreferences("murn", 0).edit().putInt("parallel", parallel.value).apply()
         pump()
     }
@@ -121,23 +139,43 @@ object DownloadManager {
 
     // ------------------------------------------------------------------ public actions
 
-    /** Accepts any text with links (one per line, or a whole shared message). Returns how many links it found. */
-    fun addLinks(raw: String, q: Quality, maxPerLink: Int?): Int {
+    /**
+     * Accepts any text with links (one per line, or a whole shared message). Returns how many links it found.
+     * [pick] = open the thumbnail picker when a link has several videos; [zip] = put everything in one ZIP.
+     */
+    fun addLinks(raw: String, q: Quality, limit: Int, pick: Boolean, zip: Boolean): Int {
         val urls = extractUrls(raw)
         if (urls.isEmpty()) return 0
+        val batch = newId()
         for (url in urls) {
             val id = newId()
-            items.update { it + Item(id, url, title = url, status = Status.RESOLVING, quality = q) }
-            jobs[id] = scope.launch { resolve(id, url, q, maxPerLink) }
+            items.update { it + Item(id, url, title = url, status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
+            jobs[id] = scope.launch { resolve(id, url, q, limit, pick, zip, batch) }
         }
         DownloadService.start(app)
         return urls.size
     }
 
+    /** Search by name. [siteUrl] = search inside that site (its own search form); null = search YouTube. */
+    fun search(query: String, siteUrl: String?, q: Quality, limit: Int, pick: Boolean, zip: Boolean) {
+        val batch = newId()
+        val id = newId()
+        val where = if (siteUrl == null) "يوتيوب" else runCatching { java.net.URL(siteUrl).host }.getOrDefault(siteUrl)
+        items.update { it + Item(id, siteUrl ?: "", title = "بحث: $query ($where)", status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
+        jobs[id] = scope.launch { resolveSearch(id, query, siteUrl, q, limit, pick, zip, batch, "نتائج «$query» في $where") }
+        DownloadService.start(app)
+    }
+
     fun cancel(id: String) {
         val item = items.value.firstOrNull { it.id == id } ?: return
         when (item.status) {
-            Status.QUEUED -> setStatus(id, Status.CANCELED, info = "")
+            Status.QUEUED -> setStatus(id, Status.CANCELED)
+            Status.PAUSED -> {
+                pausedIds -= id
+                File(baseDir(), "tmp/$id").deleteRecursively()
+                setStatus(id, Status.CANCELED)
+                maybeZip(item.batch)
+            }
             Status.RUNNING, Status.RESOLVING -> {
                 canceled += id
                 runCatching { YoutubeDL.getInstance().destroyProcessById(id) }
@@ -146,7 +184,31 @@ object DownloadManager {
         }
     }
 
-    fun cancelAll() = items.value.filter { it.active }.forEach { cancel(it.id) }
+    fun cancelAll() {
+        paused.value = false
+        items.value.filter { it.active || it.status == Status.PAUSED }.forEach { cancel(it.id) }
+    }
+
+    /** Stops every running download in the middle; resume continues each one from where it stopped. */
+    fun pause() {
+        if (paused.value) return
+        paused.value = true
+        for (item in items.value) {
+            if (item.status == Status.RUNNING) {
+                pausedIds += item.id
+                runCatching { YoutubeDL.getInstance().destroyProcessById(item.id) }
+            }
+        }
+    }
+
+    fun resume() {
+        if (!paused.value) return
+        paused.value = false
+        pausedIds.clear()
+        items.update { list -> list.map { if (it.status == Status.PAUSED) it.copy(status = Status.QUEUED, info = "") else it } }
+        DownloadService.start(app)
+        pump()
+    }
 
     fun retry(id: String) {
         val item = items.value.firstOrNull { it.id == id } ?: return
@@ -163,59 +225,24 @@ object DownloadManager {
 
     fun clearFinished() = items.update { list -> list.filterNot { it.status == Status.DONE || it.status == Status.CANCELED } }
 
-    // ------------------------------------------------------------------ step 1: expand links into videos
+    // ------------------------------------------------------------------ picker
 
-    private data class Entry(val url: String, val title: String, val group: String?)
-
-    private suspend fun resolve(phId: String, url: String, q: Quality, maxPerLink: Int?) {
-        val entries: List<Entry>? = resolveGate.withPermit {
-            try {
-                if (!ready.await()) error("المحرك غير جاهز")
-                if (phId in canceled) throw InterruptedException()
-                val req = YoutubeDLRequest(url).apply {
-                    addOption("--flat-playlist")
-                    addOption("--dump-single-json")
-                    addOption("--no-warnings")
-                    addOption("--skip-download")
-                    addOption("--socket-timeout", 30)
-                    if (maxPerLink != null) addOption("--playlist-end", maxPerLink)
-                }
-                val out = YoutubeDL.getInstance().execute(req, phId).out.orEmpty()
-                val start = out.indexOf('{')
-                if (start < 0) error("ما قدرت أقرأ الرابط")
-                val found = ArrayList<Entry>()
-                collect(JSONObject(out.substring(start)), found, null)
-                found
-            } catch (t: Throwable) {
-                null
-            }
-        }
-
-        val wasCanceled = canceled.remove(phId)
-        jobs.remove(phId)
-        when {
-            wasCanceled -> setStatus(phId, Status.CANCELED)
-            entries == null -> {
-                // could not list it (some sites refuse listing) -> still try the link as a single download
-                update(phId) { copy(status = Status.QUEUED, title = url, info = "") }
-                pump()
-            }
-            entries.isEmpty() -> update(phId) { copy(status = Status.FAILED, error = "ما لقيت فيديوهات في هالرابط") }
-            else -> {
-                val rows = entries.take(MAX_PER_LINK).map {
-                    Item(newId(), it.url, it.title, Status.QUEUED, q, group = it.group)
-                }
-                items.update { list -> list.flatMap { if (it.id == phId) rows else listOf(it) } }
-                pump()
-            }
-        }
+    fun confirmPicker(id: String, chosen: List<Candidate>) {
+        val req = pickers.value.firstOrNull { it.id == id } ?: return
+        pickers.update { list -> list.filterNot { it.id == id } }
+        if (chosen.isNotEmpty()) enqueue(null, chosen.take(req.limit), req.quality, req.zip, req.batch)
+        else maybeZip(req.batch)
     }
+
+    fun dismissPicker(id: String) = confirmPicker(id, emptyList())
+
+    // ------------------------------------------------------------------ step 1: expand a link / search into videos
 
     private fun str(o: JSONObject, key: String): String? =
         if (o.isNull(key)) null else o.optString(key).takeIf { it.isNotBlank() }
 
     /** Walks yt-dlp's JSON: playlists can contain playlists (channel tabs), single videos are leaves. */
-    private fun collect(o: JSONObject, out: MutableList<Entry>, group: String?) {
+    private fun collect(o: JSONObject, out: MutableList<Candidate>, group: String?) {
         val entries = o.optJSONArray("entries")
         if (entries != null) {
             val g = str(o, "title") ?: group
@@ -232,13 +259,128 @@ object DownloadManager {
             val id = str(o, "id")
             if (id != null && (str(o, "ie_key") ?: "").startsWith("Youtube")) link = "https://www.youtube.com/watch?v=$id"
         }
-        if (link != null) out += Entry(link, title, group)
+        val thumb = str(o, "thumbnail") ?: o.optJSONArray("thumbnails")?.let { arr ->
+            (arr.length() - 1 downTo 0).firstNotNullOfOrNull { i -> arr.optJSONObject(i)?.let { str(it, "url") } }
+        }
+        if (link != null) out += Candidate(link, title, thumb, group)
     }
 
-    // ------------------------------------------------------------------ step 2/3: the scheduler
+    /** Lists [target] (a link or "ytsearchN:text") with yt-dlp. Throws on failure. */
+    private fun ytList(processId: String, target: String, limit: Int?): List<Candidate> {
+        val req = YoutubeDLRequest(target).apply {
+            addOption("--flat-playlist")
+            addOption("--dump-single-json")
+            addOption("--no-warnings")
+            addOption("--skip-download")
+            addOption("--socket-timeout", 30)
+            if (limit != null) addOption("--playlist-end", limit)
+        }
+        val out = YoutubeDL.getInstance().execute(req, processId).out.orEmpty()
+        val start = out.indexOf('{')
+        if (start < 0) error("ما قدرت أقرأ الرابط")
+        val found = ArrayList<Candidate>()
+        collect(JSONObject(out.substring(start)), found, null)
+        return found
+    }
+
+    private suspend fun resolve(phId: String, url: String, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
+        var cands: List<Candidate>? = null
+        var problem: Throwable? = null
+        resolveGate.withPermit {
+            try {
+                if (!ready.await()) error("المحرك غير جاهز")
+                if (phId in canceled) throw InterruptedException()
+                try {
+                    cands = ytList(phId, url, limit)
+                } catch (t: Throwable) {
+                    if (phId in canceled) throw t
+                    // yt-dlp does not know this site -> read the page itself and list the links that have thumbnails
+                    if (t.message.orEmpty().contains("Unsupported URL", ignoreCase = true)) {
+                        update(phId) { copy(info = "جاري فحص الصفحة...") }
+                        val scanned = PageScan.scan(url)
+                        if (scanned.isEmpty()) error("الموقع غير مدعوم وما لقيت مقاطع بالصفحة") else cands = scanned
+                    } else {
+                        throw t
+                    }
+                }
+            } catch (t: Throwable) {
+                problem = t
+            }
+        }
+
+        val wasCanceled = canceled.remove(phId)
+        jobs.remove(phId)
+        val found = cands
+        when {
+            wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
+            found != null -> deliver(phId, "الروابط", found, q, limit, pick, zip, batch)
+            problem?.message.orEmpty().let { it.contains("الموقع غير مدعوم") } ->
+                update(phId) { copy(status = Status.FAILED, error = problem?.message) }
+            else -> {
+                // could not list it -> still try the link as one single download, the download shows the real error
+                update(phId) { copy(status = Status.QUEUED, title = url, info = "") }
+                pump()
+            }
+        }
+    }
+
+    private suspend fun resolveSearch(
+        phId: String, query: String, siteUrl: String?, q: Quality, limit: Int,
+        pick: Boolean, zip: Boolean, batch: String, label: String,
+    ) {
+        var cands: List<Candidate>? = null
+        var problem: Throwable? = null
+        resolveGate.withPermit {
+            try {
+                if (!ready.await()) error("المحرك غير جاهز")
+                if (phId in canceled) throw InterruptedException()
+                cands = if (siteUrl == null) {
+                    ytList(phId, "ytsearch$limit:$query", null)
+                } else {
+                    PageScan.scan(PageScan.findSearchUrl(siteUrl, query))
+                }
+            } catch (t: Throwable) {
+                problem = t
+            }
+        }
+        val wasCanceled = canceled.remove(phId)
+        jobs.remove(phId)
+        val found = cands
+        when {
+            wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
+            found != null -> deliver(phId, label, found, q, limit, pick, zip, batch)
+            else -> update(phId) { copy(status = Status.FAILED, error = friendlyError(problem ?: IllegalStateException())) }
+        }
+    }
+
+    /** Found [cands]: ask the user which ones (picker), or queue them all. */
+    private fun deliver(phId: String, label: String, cands: List<Candidate>, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
+        val list = cands.distinctBy { it.url }.take(MAX_LIST)
+        when {
+            list.isEmpty() -> update(phId) { copy(status = Status.FAILED, error = "ما لقيت فيديوهات") }
+            list.size == 1 || !pick -> enqueue(phId, list.take(limit), q, zip, batch)
+            else -> {
+                items.update { l -> l.filterNot { it.id == phId } }
+                pickers.update { it + PickerRequest(newId(), label, list, limit, q, zip, batch) }
+            }
+        }
+    }
+
+    /** Turns [cands] into queued rows (replacing the placeholder row [phId] when there is one). */
+    private fun enqueue(phId: String?, cands: List<Candidate>, q: Quality, zip: Boolean, batch: String) {
+        val rows = cands.map { Item(newId(), it.url, it.title, Status.QUEUED, q, group = it.group, batch = batch, zip = zip) }
+        items.update { list ->
+            if (phId == null) list + rows else list.flatMap { if (it.id == phId) rows else listOf(it) }
+        }
+        DownloadService.start(app)
+        pump()
+    }
+
+    // ------------------------------------------------------------------ step 3: the scheduler
 
     private fun pump() {
         synchronized(pumpLock) {
+            if (paused.value) return
             var slots = parallel.value - items.value.count { it.status == Status.RUNNING }
             for (item in items.value) {
                 if (slots <= 0) break
@@ -252,8 +394,8 @@ object DownloadManager {
 
     private suspend fun runDownload(id: String) {
         val item = items.value.firstOrNull { it.id == id } ?: return
-        val base = app.getExternalFilesDir(null) ?: app.filesDir
-        val tmp = File(base, "tmp/$id").apply { mkdirs() }
+        val tmp = File(baseDir(), "tmp/$id").apply { mkdirs() }
+        var keepTmp = false
         try {
             if (!ready.await()) error("المحرك غير جاهز")
             if (id in canceled) throw InterruptedException()
@@ -267,7 +409,7 @@ object DownloadManager {
                 val speed = SPEED_RE.find(line)?.groupValues?.get(1)
                 val etaText = if (eta > 0) "متبقي ${fmtEta(eta)}" else null
                 val processing = p < 0 && (line.startsWith("[Merger]") || line.startsWith("[ExtractAudio]") ||
-                        line.startsWith("[VideoConvertor]") || line.startsWith("[FixupM4a]") || line.startsWith("[Fixup"))
+                        line.startsWith("[VideoConvertor]") || line.startsWith("[Fixup"))
                 update(id) {
                     copy(
                         progress = if (p >= 0) p / 100f else progress,
@@ -279,22 +421,38 @@ object DownloadManager {
                     )
                 }
             }
-            if (id in canceled) throw InterruptedException()
+            if (id in canceled || id in pausedIds) throw InterruptedException()
 
-            update(id) { copy(info = "جاري الحفظ في التنزيلات...", progress = 1f) }
-            val saved = publish(tmp)
-            if (saved == null) error("خلص التحميل بس ما لقيت الملف")
-            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = saved) }
-        } catch (t: Throwable) {
-            if (id in canceled || t is InterruptedException || t is YoutubeDL.CanceledException) {
-                update(id) { copy(status = Status.CANCELED, info = "") }
+            val file = pickMediaFile(tmp) ?: error("خلص التحميل بس ما لقيت الملف")
+            if (item.zip) {
+                val stage = File(baseDir(), "zip/${item.batch}").apply { mkdirs() }
+                var dst = File(stage, file.name)
+                var n = 1
+                while (dst.exists()) { dst = File(stage, "${file.nameWithoutExtension} ($n).${file.extension}"); n++ }
+                file.copyTo(dst)
             } else {
-                update(id) { copy(status = Status.FAILED, info = "", error = friendlyError(t)) }
+                update(id) { copy(info = "جاري الحفظ في التنزيلات...", progress = 1f) }
+                saveToDownloads(file.name, mimeFor(file.name)) { out -> file.inputStream().use { it.copyTo(out) } }
+            }
+            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = file.name) }
+        } catch (t: Throwable) {
+            val userCanceled = id in canceled
+            val userPaused = id in pausedIds && !userCanceled
+            when {
+                userPaused -> {
+                    keepTmp = true // .part files stay, so resume continues where it stopped
+                    update(id) { copy(status = Status.PAUSED, info = "متوقف مؤقتاً") }
+                }
+                userCanceled || t is InterruptedException || t is YoutubeDL.CanceledException ->
+                    update(id) { copy(status = Status.CANCELED, info = "") }
+                else -> update(id) { copy(status = Status.FAILED, info = "", error = friendlyError(t)) }
             }
         } finally {
             canceled.remove(id)
+            if (items.value.firstOrNull { it.id == id }?.status != Status.PAUSED) pausedIds.remove(id)
             jobs.remove(id)
-            tmp.deleteRecursively()
+            if (!keepTmp) tmp.deleteRecursively()
+            maybeZip(item.batch)
             pump()
         }
     }
@@ -323,24 +481,21 @@ object DownloadManager {
                     addOption("-S", "res,vcodec:h264,acodec:m4a")
                 } else {
                     addOption("-f", "bv*[height<=$h]+ba/b[height<=$h]/b")
-                    addOption("-S", "vcodec:h264,res,acodec:m4a")
+                    // phones play h264 best, but YouTube only has h264 up to 1080p -> above that resolution wins
+                    addOption("-S", if (h > 1080) "res,vcodec:h264,acodec:m4a" else "vcodec:h264,res,acodec:m4a")
                 }
                 addOption("--merge-output-format", "mp4")
             }
         }
     }
 
-    // ------------------------------------------------------------------ step 4: move the file to Downloads/Murn
+    // ------------------------------------------------------------------ step 5: saving
 
-    private fun publish(tmp: File): String? {
-        val files = tmp.listFiles { f ->
+    private fun pickMediaFile(tmp: File): File? =
+        tmp.listFiles { f ->
             f.isFile && !f.name.startsWith(".") &&
                     listOf(".part", ".ytdl", ".temp", ".json", ".webp", ".jpg", ".png").none { f.name.endsWith(it) }
-        }?.sortedByDescending { it.length() }.orEmpty()
-        val file = files.firstOrNull() ?: return null
-        saveToDownloads(file)
-        return file.name
-    }
+        }?.maxByOrNull { it.length() }
 
     private fun mimeFor(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
         "mp4" -> "video/mp4"
@@ -349,21 +504,23 @@ object DownloadManager {
         "mp3" -> "audio/mpeg"
         "m4a" -> "audio/mp4"
         "opus", "ogg" -> "audio/ogg"
+        "zip" -> "application/zip"
         else -> "application/octet-stream"
     }
 
-    private fun saveToDownloads(src: File) {
+    /** Writes a new file into  Downloads/Murn  (public folder, visible in the gallery / files app). */
+    private fun saveToDownloads(name: String, mime: String, write: (OutputStream) -> Unit) {
         if (Build.VERSION.SDK_INT >= 29) {
             val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, src.name)
-                put(MediaStore.MediaColumns.MIME_TYPE, mimeFor(src.name))
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, mime)
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Murn")
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
             val resolver = app.contentResolver
             val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("ما قدرت أحفظ الملف")
             try {
-                resolver.openOutputStream(uri)!!.use { out -> src.inputStream().use { it.copyTo(out) } }
+                resolver.openOutputStream(uri)!!.use(write)
                 val done = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
                 resolver.update(uri, done, null, null)
             } catch (t: Throwable) {
@@ -374,11 +531,44 @@ object DownloadManager {
             @Suppress("DEPRECATION")
             val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Murn")
             dir.mkdirs()
-            var dst = File(dir, src.name)
+            val base = name.substringBeforeLast('.')
+            val ext = name.substringAfterLast('.', "")
+            var dst = File(dir, name)
             var n = 1
-            while (dst.exists()) { dst = File(dir, "${src.nameWithoutExtension} ($n).${src.extension}"); n++ }
-            src.copyTo(dst)
+            while (dst.exists()) { dst = File(dir, "$base ($n).$ext"); n++ }
+            dst.outputStream().use(write)
             MediaScannerConnection.scanFile(app, arrayOf(dst.absolutePath), null, null)
+        }
+    }
+
+    /** ZIP mode: when nothing of the batch is left to do, pack everything downloaded into one ZIP. */
+    private fun maybeZip(batch: String) {
+        if (batch.isEmpty()) return
+        synchronized(zipLock) {
+            val stage = File(baseDir(), "zip/$batch")
+            if (!stage.isDirectory) return
+            val pending = items.value.any { it.batch == batch && (it.active || it.status == Status.PAUSED) } ||
+                    pickers.value.any { it.batch == batch }
+            if (pending) return
+            val files = stage.listFiles()?.filter { it.isFile }?.sortedBy { it.name }.orEmpty()
+            try {
+                if (files.isNotEmpty()) {
+                    val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                    saveToDownloads("Murn_$stamp.zip", "application/zip") { out ->
+                        ZipOutputStream(out.buffered()).use { zip ->
+                            zip.setLevel(Deflater.NO_COMPRESSION) // videos are already compressed
+                            for (f in files) {
+                                zip.putNextEntry(ZipEntry(f.name))
+                                f.inputStream().use { it.copyTo(zip) }
+                                zip.closeEntry()
+                            }
+                        }
+                    }
+                }
+            } catch (_: Throwable) {
+                return // keep the staged files, the next call tries again
+            }
+            stage.deleteRecursively()
         }
     }
 
@@ -409,27 +599,32 @@ object DownloadManager {
             line.contains("unavailable", true) -> "الفيديو غير متاح (محذوف أو محجوب في بلدك)"
             line.contains("age", true) && line.contains("restrict", true) -> "الفيديو مقيّد بالعمر ويحتاج تسجيل دخول"
             line.contains("Unsupported URL", true) -> "الرابط هذا غير مدعوم"
-            line.contains("Unable to download", true) || line.contains("timed out", true) || line.contains("resolve", true) ->
-                "مشكلة بالاتصال بالإنترنت"
+            line.contains("Unable to download", true) || line.contains("timed out", true) ||
+                    line.contains("resolve", true) || line.contains("UnknownHost", true) -> "مشكلة بالاتصال بالإنترنت"
             line.contains("No space", true) -> "ما في مساحة كافية بالجوال"
-            line.isBlank() -> "فشل التحميل"
+            line.isBlank() -> "فشل"
             else -> line.take(160)
         }
     }
 
-    private fun extractUrls(raw: String): List<String> =
-        raw.split(Regex("\\s+"))
-            .map { it.trim().trimEnd('.', ',', ')', ';', '،', '"', '\'') }
-            .mapNotNull {
-                when {
-                    it.startsWith("http://", true) || it.startsWith("https://", true) -> it
-                    BARE_DOMAIN_RE.matches(it) -> "https://$it"
-                    else -> null
-                }
+    private fun extractUrls(raw: String): List<String> {
+        val tokens = raw.split(Regex("\\s+")).map { it.trim().trimEnd('.', ',', ')', ';', '،', '"', '\'') }.filter { it.isNotEmpty() }
+        return tokens.mapNotNull {
+            when {
+                it.startsWith("http://", true) || it.startsWith("https://", true) -> it
+                BARE_PATH_RE.matches(it) -> "https://$it"
+                // a bare site name (m.example.com) counts only when it is the only thing pasted, or starts with www.
+                BARE_HOST_RE.matches(it) && (tokens.size == 1 || it.startsWith("www.", true)) -> "https://$it"
+                else -> null
             }
-            .distinct()
+        }.distinct()
+    }
+
+    /** First link in free text (used for "search inside the site in the box above"). */
+    fun firstUrl(raw: String): String? = extractUrls(raw).firstOrNull()
 
     private val SPEED_RE = Regex("""at\s+(\S+/s)""")
-    private val BARE_DOMAIN_RE = Regex("""^[\w-]+(\.[\w-]+)+/\S+$""")
-    private const val MAX_PER_LINK = 1000
+    private val BARE_PATH_RE = Regex("""^[\w-]+(\.[\w-]+)+/\S*$""")
+    private val BARE_HOST_RE = Regex("""^[\w-]+(\.[\w-]+)+$""")
+    private const val MAX_LIST = 1000
 }
