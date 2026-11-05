@@ -283,6 +283,9 @@ object DownloadManager {
         return found
     }
 
+    /** an error whose message is already written for the user */
+    private class PageProblem(message: String) : Exception(message)
+
     private suspend fun resolve(phId: String, url: String, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
         var cands: List<Candidate>? = null
         var problem: Throwable? = null
@@ -294,14 +297,19 @@ object DownloadManager {
                     cands = ytList(phId, url, limit)
                 } catch (t: Throwable) {
                     if (phId in canceled) throw t
-                    // yt-dlp does not know this site -> read the page itself and list the links that have thumbnails
-                    if (t.message.orEmpty().contains("Unsupported URL", ignoreCase = true)) {
+                    // yt-dlp could not list it -> if it is an ordinary site, read the page itself and list the links
+                    // that have thumbnails (same idea as the Windows tool). Big platforms are not scraped.
+                    val host = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
+                    val big = listOf("youtube.", "youtu.be", "tiktok.", "instagram.", "twitter.", "x.com", "facebook.")
+                    var scanned: List<Candidate> = emptyList()
+                    var scanErr: Throwable? = null
+                    if (big.none { host.contains(it) }) {
                         update(phId) { copy(info = "جاري فحص الصفحة...") }
-                        val scanned = PageScan.scan(url)
-                        if (scanned.isEmpty()) error("الموقع غير مدعوم وما لقيت مقاطع بالصفحة") else cands = scanned
-                    } else {
-                        throw t
+                        try { scanned = PageScan.scan(url) } catch (e: Throwable) { scanErr = e }
                     }
+                    if (scanned.isNotEmpty()) cands = scanned
+                    else if (scanErr != null) throw PageProblem("تعذر فتح الصفحة: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}")
+                    else throw t
                 }
             } catch (t: Throwable) {
                 problem = t
@@ -314,7 +322,7 @@ object DownloadManager {
         when {
             wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
             found != null -> deliver(phId, "الروابط", found, q, limit, pick, zip, batch)
-            problem?.message.orEmpty().let { it.contains("الموقع غير مدعوم") } ->
+            problem is PageProblem ->
                 update(phId) { copy(status = Status.FAILED, error = problem?.message) }
             else -> {
                 // could not list it -> still try the link as one single download, the download shows the real error
@@ -589,21 +597,32 @@ object DownloadManager {
     }
 
     private fun friendlyError(t: Throwable): String {
+        if (t is PageProblem) return t.message.orEmpty()
         val msg = t.message.orEmpty()
         val line = msg.lines().lastOrNull { it.contains("ERROR", ignoreCase = true) }?.substringAfter("ERROR:")?.trim()
             ?: msg.lines().lastOrNull { it.isNotBlank() }.orEmpty()
-        return when {
+        val raw = line.replace(Regex("\\s+"), " ").take(220)
+        val friendly: String? = when {
             line.contains("Sign in to confirm", true) || line.contains("not a bot", true) ->
                 "يوتيوب طلب تأكيد إنك مو روبوت. جرّب تحديث المحرك من الإعدادات أو غيّر الشبكة"
             line.contains("Private video", true) -> "الفيديو خاص"
-            line.contains("unavailable", true) -> "الفيديو غير متاح (محذوف أو محجوب في بلدك)"
-            line.contains("age", true) && line.contains("restrict", true) -> "الفيديو مقيّد بالعمر ويحتاج تسجيل دخول"
-            line.contains("Unsupported URL", true) -> "الرابط هذا غير مدعوم"
+            line.contains("Video unavailable", true) -> "الفيديو غير متاح (محذوف أو محجوب)"
+            line.contains("451") -> "الموقع محجوب قانونياً في بلدك (451). جرّب VPN"
+            line.contains("HTTP Error 403", true) || line.contains("403: Forbidden", true) ->
+                "الموقع رفض الطلب (403). ممكن يحمي مقاطعه أو يحتاج VPN"
+            line.contains("HTTP Error 404", true) -> "الصفحة غير موجودة (404)"
+            line.contains("Sign in", true) && line.contains("age", true) -> "المقطع يحتاج تسجيل دخول (عمر)"
+            line.contains("Unsupported URL", true) -> "الرابط هذا غير مدعوم عند المحرك"
             line.contains("Unable to download", true) || line.contains("timed out", true) ||
-                    line.contains("resolve", true) || line.contains("UnknownHost", true) -> "مشكلة بالاتصال بالإنترنت"
+                    line.contains("resolve", true) || line.contains("UnknownHost", true) ||
+                    line.contains("Connection", true) -> "مشكلة بالاتصال بالإنترنت"
             line.contains("No space", true) -> "ما في مساحة كافية بالجوال"
-            line.isBlank() -> "فشل"
-            else -> line.take(160)
+            else -> null
+        }
+        return when {
+            raw.isBlank() -> friendly ?: "فشل"
+            friendly == null -> raw
+            else -> "$friendly\n$raw"
         }
     }
 

@@ -538,7 +538,7 @@ private fun ItemRow(item: Item) {
                     Status.FAILED -> Row(verticalAlignment = Alignment.Top) {
                         Icon(Icons.Filled.Error, null, tint = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.width(6.dp))
-                        Text(item.error ?: "فشل", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        Text(item.error ?: "فشل", maxLines = 5, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                     Status.CANCELED -> Text("⏹ متوقف", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
