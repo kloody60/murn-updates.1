@@ -177,6 +177,7 @@ fun MainScreen() {
     var searchInSite by rememberSaveable { mutableStateOf(false) }
     var qualityMenu by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showAccounts by remember { mutableStateOf(false) }
 
     // Android 13+ needs permission to show the progress notification
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -446,6 +447,8 @@ fun MainScreen() {
         )
     }
 
+    if (showAccounts) AccountsDialog(onDismiss = { showAccounts = false })
+
     // ---------------------------------------------------- settings
     if (showSettings) {
         AlertDialog(
@@ -467,6 +470,9 @@ fun MainScreen() {
                         Icon(Icons.Filled.Refresh, null)
                         Spacer(Modifier.width(6.dp))
                         Text("تحديث المحرك (إذا موقع وقف يحمّل)")
+                    }
+                    OutlinedButton(onClick = { showSettings = false; showAccounts = true }) {
+                        Text("حسابات المنصات (إنستغرام، فيسبوك، تيك توك، سناب...)")
                     }
                     OutlinedButton(onClick = {
                         showSettings = false

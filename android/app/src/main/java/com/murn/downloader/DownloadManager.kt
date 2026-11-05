@@ -333,7 +333,13 @@ object DownloadManager {
             addOption("--socket-timeout", 30)
             if (limit != null) addOption("--playlist-end", limit)
         }
-        val out = YoutubeDL.getInstance().execute(req, processId).out.orEmpty()
+        val ck = File(baseDir(), "tmp/ck_$processId/cookies.txt")
+        if (!target.startsWith("ytsearch") && CookieStore.exportTo(app, ck)) req.addOption("--cookies", ck.absolutePath)
+        val out = try {
+            YoutubeDL.getInstance().execute(req, processId).out.orEmpty()
+        } finally {
+            ck.parentFile?.deleteRecursively()
+        }
         val start = out.indexOf('{')
         if (start < 0) error("ما قدرت أقرأ الرابط")
         val found = ArrayList<Candidate>()
@@ -471,6 +477,17 @@ object DownloadManager {
             } catch (t: Throwable) {
                 if (id in canceled || id in pausedIds || t is InterruptedException || t is YoutubeDL.CanceledException) throw t
                 val text = t.message.orEmpty()
+                val photoUrl = SocialFix.photoUrlIn(text) ?: item.url.takeIf { SocialFix.isTikTokPhoto(it) }
+                if (photoUrl != null) {
+                    // TikTok photo post (slideshow of pictures): yt-dlp has no extractor for it -> save the pictures
+                    if (downloadPhotoPost(id, item, tmp, photoUrl)) return
+                    try {
+                        runYtdlp(id, buildRequest(item.copy(url = SocialFix.asVideoUrl(photoUrl)), tmp))
+                    } catch (t2: Throwable) {
+                        if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
+                        throw PageProblem("هذا منشور صور من تيك توك: ما قدرت أقرأ الصور من الصفحة، وطريقة الفيديو فشلت أيضاً.\n${friendlyError(t2)}")
+                    }
+                } else {
                 val blocked = text.contains("451") || text.contains("403") ||
                         text.contains("Unsupported URL", true) || text.contains("Unable to extract", true)
                 if (!blocked || isBigHost(hostOf(item.url))) throw t
@@ -485,6 +502,7 @@ object DownloadManager {
                 } catch (t2: Throwable) {
                     if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
                     throw PageProblem("المحاولة الأولى: ${friendlyError(t)}\n\nبطريقة المتصفح: ${friendlyError(t2)}")
+                }
                 }
             }
             if (id in canceled || id in pausedIds) throw InterruptedException()
@@ -521,6 +539,31 @@ object DownloadManager {
             maybeZip(item.batch)
             pump()
         }
+    }
+
+    /** Saves the pictures of a TikTok photo post. true = done (item is DONE), false = no pictures found. */
+    private fun downloadPhotoPost(id: String, item: Item, tmp: File, photoUrl: String): Boolean {
+        update(id) { copy(title = "صور تيك توك", info = "جاري قراءة صور المنشور...", progress = 0f) }
+        val urls = try { SocialFix.tiktokPhotos(photoUrl) } catch (e: Throwable) { emptyList() }
+        if (urls.isEmpty()) return false
+        val post = SocialFix.postId(photoUrl)
+        val files = ArrayList<File>()
+        urls.forEachIndexed { i, u ->
+            if (id in canceled || id in pausedIds) throw InterruptedException()
+            update(id) { copy(progress = i / urls.size.toFloat(), info = "صورة ${i + 1} من ${urls.size}") }
+            files += SocialFix.download(u, tmp, "TikTok_${post}_${i + 1}")
+        }
+        for (f in files) {
+            if (item.zip) {
+                val stage = File(baseDir(), "zip/${item.batch}").apply { mkdirs() }
+                f.copyTo(File(stage, f.name), overwrite = true)
+            } else {
+                val mime = when (f.extension) { "png" -> "image/png"; "webp" -> "image/webp"; else -> "image/jpeg" }
+                saveToDownloads(f.name, mime) { out -> f.inputStream().use { it.copyTo(out) } }
+            }
+        }
+        update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = "${files.size} صورة") }
+        return true
     }
 
     private fun hostOf(url: String): String = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
@@ -566,6 +609,8 @@ object DownloadManager {
             addOption("--retries", 5)
             addOption("--fragment-retries", 5)
             addOption("--socket-timeout", 30)
+            // logged-in platform accounts (Settings -> platform accounts); a private copy per download
+            File(tmp, "cookies.txt").let { if (CookieStore.exportTo(app, it)) addOption("--cookies", it.absolutePath) }
             // a direct media link has no real title, so name the file after the video we picked
             addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) else "%(title).100s") + ".%(ext)s").absolutePath)
             if (!isBigHost(host)) {
@@ -599,7 +644,7 @@ object DownloadManager {
     private fun pickMediaFile(tmp: File): File? =
         tmp.listFiles { f ->
             f.isFile && !f.name.startsWith(".") &&
-                    listOf(".part", ".ytdl", ".temp", ".json", ".webp", ".jpg", ".png").none { f.name.endsWith(it) }
+                    listOf(".part", ".ytdl", ".temp", ".json", ".webp", ".jpg", ".png", ".txt").none { f.name.endsWith(it) }
         }?.maxByOrNull { it.length() }
 
     private fun mimeFor(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
@@ -702,6 +747,10 @@ object DownloadManager {
         val friendly: String? = when {
             line.contains("Sign in to confirm", true) || line.contains("not a bot", true) ->
                 "يوتيوب طلب تأكيد إنك مو روبوت. جرّب تحديث المحرك من الإعدادات أو غيّر الشبكة"
+            line.contains("login required", true) || line.contains("requires authentication", true) ||
+                    line.contains("cookies", true) || line.contains("rate-limit", true) ||
+                    (line.contains("log in", true) && !line.contains("age", true)) ->
+                "المنصة تطلب تسجيل دخول. من الإعدادات ← «حسابات المنصات» سجّل دخولك وأعد المحاولة"
             line.contains("Private video", true) -> "الفيديو خاص"
             line.contains("Video unavailable", true) -> "الفيديو غير متاح (محذوف أو محجوب)"
             line.contains("451") -> "الموقع محجوب قانونياً في بلدك (451). جرّب VPN"
