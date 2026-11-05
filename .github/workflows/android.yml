@@ -62,7 +62,8 @@ jobs:
           mkdir -p ../release
           CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
           NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          printf '{"versionCode": %s, "versionName": "%s", "notes": ""}\n' "$CODE" "$NAME" > ../release/version.json
+          jq -n --argjson c "$CODE" --arg n "$NAME" --rawfile notes release-notes.txt \
+            '{versionCode:$c, versionName:$n, notes:($notes|rtrimstr("\n"))}' > ../release/version.json
           cat ../release/version.json
 
       - uses: actions/upload-artifact@v4
