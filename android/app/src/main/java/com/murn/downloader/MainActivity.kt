@@ -17,6 +17,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -158,6 +161,7 @@ fun MainScreen() {
     val parallel by DownloadManager.parallel.collectAsStateWithLifecycle()
     val paused by DownloadManager.paused.collectAsStateWithLifecycle()
     val shared by MainActivity.sharedText.collectAsStateWithLifecycle()
+    val diag by DownloadManager.diagText.collectAsStateWithLifecycle()
 
     var input by rememberSaveable { mutableStateOf("") }
     var limitText by rememberSaveable { mutableStateOf("200") }
@@ -365,6 +369,20 @@ fun MainScreen() {
         )
     }
 
+    // ---------------------------------------------------- connection report
+    diag?.let { report ->
+        AlertDialog(
+            onDismissRequest = { DownloadManager.diagText.value = null },
+            confirmButton = { TextButton(onClick = { DownloadManager.diagText.value = null }) { Text("إغلاق") } },
+            title = { Text("تقرير الفحص") },
+            text = {
+                SelectionContainer {
+                    Text(report, modifier = Modifier.verticalScroll(rememberScrollState()), style = MaterialTheme.typography.bodySmall)
+                }
+            },
+        )
+    }
+
     // ---------------------------------------------------- settings
     if (showSettings) {
         AlertDialog(
@@ -387,6 +405,10 @@ fun MainScreen() {
                         Spacer(Modifier.width(6.dp))
                         Text("تحديث المحرك (إذا موقع وقف يحمّل)")
                     }
+                    OutlinedButton(onClick = {
+                        showSettings = false
+                        DownloadManager.diagnose(DownloadManager.firstUrl(input))
+                    }) { Text("فحص الاتصال (يطلّع تقرير)") }
                     Text(
                         "الملفات تنحفظ في: التنزيلات / Murn",
                         style = MaterialTheme.typography.bodySmall,

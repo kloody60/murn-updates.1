@@ -65,6 +65,8 @@ object DownloadManager {
     val parallel = MutableStateFlow(3)
     val quality = MutableStateFlow(Quality.P1080)
     val paused = MutableStateFlow(false)
+    /** report of the "فحص الاتصال" button (null = no report to show) */
+    val diagText = MutableStateFlow<String?>(null)
 
     // ------------------------------------------------------------------ setup
 
@@ -224,6 +226,62 @@ object DownloadManager {
     fun remove(id: String) = items.update { list -> list.filterNot { it.id == id && !it.active } }
 
     fun clearFinished() = items.update { list -> list.filterNot { it.status == Status.DONE || it.status == Status.CANCELED } }
+
+    // ------------------------------------------------------------------ diagnostics
+
+    /** One tap that tells what works: internet, YouTube, the given site, the engine, the page scan. */
+    fun diagnose(siteUrl: String?) {
+        diagText.value = "جاري الفحص... (ياخذ نص دقيقة)"
+        scope.launch {
+            val sb = StringBuilder()
+            sb.appendLine("النسخة 1.0.2 · أندرويد ${Build.VERSION.RELEASE}")
+            sb.appendLine("المحرك: ${engineStatus.value}")
+            fun probe(label: String, url: String) {
+                val r = try {
+                    val c = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+                        connectTimeout = 15_000; readTimeout = 15_000; instanceFollowRedirects = true
+                        setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36")
+                    }
+                    val code = c.responseCode
+                    c.disconnect()
+                    "HTTP $code"
+                } catch (t: Throwable) {
+                    "فشل: ${t.javaClass.simpleName} ${t.message.orEmpty().take(80)}"
+                }
+                sb.appendLine("$label: $r")
+            }
+            probe("1) الإنترنت (google)", "https://www.google.com/generate_204")
+            probe("2) موقع يوتيوب", "https://www.youtube.com/")
+            if (siteUrl != null) probe("3) الموقع اللي في الخانة", siteUrl)
+
+            val engineOk = try { ready.await() } catch (_: Throwable) { false }
+            if (!engineOk) {
+                sb.appendLine("4) المحرك: ما اشتغل أصلاً")
+            } else {
+                try {
+                    val l = ytList("diag", "ytsearch2:test", null)
+                    sb.appendLine("4) بحث يوتيوب بالمحرك: نجح (${l.size} نتيجة)")
+                } catch (t: Throwable) {
+                    sb.appendLine("4) بحث يوتيوب بالمحرك: فشل\n   ${friendlyError(t).replace("\n", "\n   ")}")
+                }
+                if (siteUrl != null) {
+                    try {
+                        val l = ytList("diag", siteUrl, 5)
+                        sb.appendLine("5) قراءة الموقع بالمحرك: نجح (${l.size} مقطع)")
+                    } catch (t: Throwable) {
+                        sb.appendLine("5) قراءة الموقع بالمحرك: فشل\n   ${friendlyError(t).replace("\n", "\n   ")}")
+                    }
+                    try {
+                        val l = PageScan.scan(siteUrl)
+                        sb.appendLine("6) فحص الصفحة: لقى ${l.size} مقطع")
+                    } catch (t: Throwable) {
+                        sb.appendLine("6) فحص الصفحة: فشل ${t.javaClass.simpleName} ${t.message.orEmpty().take(100)}")
+                    }
+                }
+            }
+            diagText.value = sb.toString()
+        }
+    }
 
     // ------------------------------------------------------------------ picker
 
