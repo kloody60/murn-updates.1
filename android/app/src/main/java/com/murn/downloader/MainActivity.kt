@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -439,9 +440,9 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
     val selected = remember(req.id) { mutableStateListOf<Int>().apply { addAll(0 until minOf(total, max)) } }
     var firstN by remember(req.id) { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(Modifier.padding(horizontal = 10.dp).padding(top = 28.dp, bottom = 8.dp)) {
+            Column(Modifier.systemBarsPadding().padding(horizontal = 10.dp).padding(top = 8.dp, bottom = 8.dp)) {
                 Text(req.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
                     "محدد ${selected.size} من $total  (الحد الأقصى $max)",
