@@ -955,6 +955,10 @@ object DownloadManager {
             line.contains("HTTP Error 404", true) -> tr("الصفحة غير موجودة (404)", "Page not found (404)")
             line.contains("Sign in", true) && line.contains("age", true) -> tr("المقطع يحتاج تسجيل دخول (عمر)", "The video needs a login (age restriction)")
             line.contains("Unsupported URL", true) -> tr("الرابط هذا غير مدعوم عند المحرك", "This link is not supported by the engine")
+            line.contains("No address associated", true) || line.contains("Name or service not known", true) ||
+                    line.contains("getaddrinfo", true) || line.contains("UnknownHost", true) ->
+                tr("الجوال ما قدر يحوّل اسم الموقع لعنوان (DNS)، وغالباً مزود الإنترنت يحجب الموقع. من إعدادات الجوال ← الاتصال ← «DNS خاص» اكتب dns.google وجرّب، أو شغّل VPN",
+                    "The phone could not resolve the site's name (DNS); your internet provider probably blocks it. In phone Settings → Connections → “Private DNS” enter dns.google and retry, or turn on a VPN")
             line.contains("Unable to download", true) || line.contains("timed out", true) ||
                     line.contains("resolve", true) || line.contains("UnknownHost", true) ||
                     line.contains("Connection", true) -> tr("مشكلة بالاتصال بالإنترنت", "Internet connection problem")
