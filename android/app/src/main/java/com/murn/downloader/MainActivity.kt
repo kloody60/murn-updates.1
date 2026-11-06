@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Lang.init(this) // re-read: the language may have been changed from the phone settings
         enableEdgeToEdge()
         handleShare(intent)
         publishShareTarget()

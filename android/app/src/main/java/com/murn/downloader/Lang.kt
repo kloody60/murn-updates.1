@@ -1,6 +1,9 @@
 package com.murn.downloader
 
+import android.app.LocaleManager
 import android.content.Context
+import android.os.Build
+import android.os.LocaleList
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,13 +13,26 @@ object Lang {
     var en by mutableStateOf(false)
         private set
 
+    /** Reads the language: the phone's per-app language setting (Android 13+) wins, else the saved choice. */
     fun init(ctx: Context) {
-        en = ctx.getSharedPreferences("murn", 0).getString("lang", "ar") == "en"
+        var chosen: String? = null
+        if (Build.VERSION.SDK_INT >= 33) {
+            val l = runCatching { ctx.getSystemService(LocaleManager::class.java).applicationLocales }.getOrNull()
+            if (l != null && !l.isEmpty) chosen = l[0].language
+        }
+        en = (chosen ?: ctx.getSharedPreferences("murn", 0).getString("lang", "ar")) == "en"
     }
 
     fun set(ctx: Context, english: Boolean) {
         en = english
         ctx.getSharedPreferences("murn", 0).edit().putString("lang", if (english) "en" else "ar").apply()
+        // keep the phone's own "App language" setting (Settings -> Apps -> Murn -> Language) in step
+        if (Build.VERSION.SDK_INT >= 33) {
+            runCatching {
+                ctx.getSystemService(LocaleManager::class.java)
+                    .applicationLocales = LocaleList.forLanguageTags(if (english) "en" else "ar")
+            }
+        }
     }
 }
 
