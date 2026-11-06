@@ -396,7 +396,9 @@ fun MainScreen() {
                             label = { Text(tr("اكتب اسم أو أكثر (افصل بفاصلة ،)", "Type one or more names (separate with commas)")) },
                             trailingIcon = {
                                 if (searchText.isNotEmpty()) {
-                                    IconButton(onClick = { searchText = "" }) { Icon(Icons.Filled.Close, tr("مسح", "Clear")) }
+                                    IconButton(onClick = { searchText = "" }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.Filled.Close, tr("مسح", "Clear"), modifier = Modifier.size(16.dp))
+                                    }
                                 }
                             },
                         )
