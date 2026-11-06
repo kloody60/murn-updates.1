@@ -522,7 +522,13 @@ object DownloadManager {
                 if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
                 if (phId in canceled) throw InterruptedException()
                 val directImg = SocialFix.isImageUrl(url)
-                if (directImg || images) {
+                val snaps = if (!directImg && !images && SnapFind.isSnap(url)) {
+                    update(phId) { copy(info = tr("جاري قراءة السناب...", "Reading the snap...")) }
+                    runCatching { SnapFind.find(app, url) }.getOrDefault(emptyList())
+                } else emptyList()
+                if (snaps.isNotEmpty()) {
+                    cands = snaps
+                } else if (directImg || images) {
                     update(phId) { copy(info = tr("جاري البحث عن الصور...", "Looking for pictures...")) }
                     cands = if (directImg) listOf(Candidate(url, SocialFix.nameOf(url), url, null, true, url))
                     else ImageFind.find(app, url).also { if (it.isEmpty()) throw PageProblem(tr("ما لقيت صور في الصفحة", "No pictures found in the page")) }
@@ -867,9 +873,13 @@ object DownloadManager {
         } else {
             saveToDownloads(f.name, mimeFor(f.name)) { out -> f.inputStream().use { it.copyTo(out) } }
         }
-        val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        android.graphics.BitmapFactory.decodeFile(f.absolutePath, o)
-        val res = if (o.outWidth > 0) "${o.outWidth}x${o.outHeight}" else null
+        val isVideoFile = f.extension.lowercase() in listOf("mp4", "mov", "webm")
+        val res = if (isVideoFile) videoSize(f)?.let { "${minOf(it.first, it.second)}p (${it.first}x${it.second})" }
+        else {
+            val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeFile(f.absolutePath, o)
+            if (o.outWidth > 0) "${o.outWidth}x${o.outHeight}" else null
+        }
         update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = f.name, resolution = res) }
     }
 
@@ -969,6 +979,7 @@ object DownloadManager {
         "png" -> "image/png"
         "webp" -> "image/webp"
         "gif" -> "image/gif"
+        "mov" -> "video/quicktime"
         else -> "application/octet-stream"
     }
 

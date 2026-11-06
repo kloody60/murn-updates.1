@@ -250,6 +250,9 @@ object SocialFix {
         try {
             if (c.responseCode != 200) error("HTTP ${c.responseCode}")
             val ext = when {
+                c.contentType.orEmpty().contains("video/webm") -> "webm"
+                c.contentType.orEmpty().contains("video/quicktime") -> "mov"
+                c.contentType.orEmpty().contains("video/") -> "mp4"
                 c.contentType.orEmpty().contains("gif") -> "gif"
                 c.contentType.orEmpty().contains("webp") -> "webp"
                 c.contentType.orEmpty().contains("png") -> "png"
