@@ -1,11 +1,11 @@
 {
-  "versionCode": 118,
-  "versionName": "1.1.0.18",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-18/Murn-debug.apk",
-  "sha256": "b48d1076fd92856f93478412779c31ea00b75f7ae5b2e6dd1f7e48429d62008d",
-  "sizeBytes": 118790427,
+  "versionCode": 119,
+  "versionName": "1.1.0.19",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-19/Murn-debug.apk",
+  "sha256": "5b74f311795da29b97cbce36ddf2b787912c8b1653ed53cc71518ede4592d316",
+  "sizeBytes": 118792635,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Bulk card: when a site refuses the downloader (451/403), explain and offer opening it in the browser",
-  "notes_en": "Bulk card: when a site refuses the downloader (451/403), explain and offer opening it in the browser"
+  "notes": "Blocked links: retry the scan with a browser identity, and open a single blocked link straight in the in-app browser",
+  "notes_en": "Blocked links: retry the scan with a browser identity, and open a single blocked link straight in the in-app browser"
 }
