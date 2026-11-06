@@ -517,6 +517,7 @@ object DownloadManager {
         var cands: List<Candidate>? = null
         var problem: Throwable? = null
         var srcInit: PSrc? = null
+        var autoAll = false // Snapchat: a given link downloads right away, no picker
         resolveGate.withPermit {
             try {
                 if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
@@ -528,6 +529,7 @@ object DownloadManager {
                 } else emptyList()
                 if (snaps.isNotEmpty()) {
                     cands = snaps
+                    autoAll = true
                 } else if (directImg || images) {
                     update(phId) { copy(info = tr("جاري البحث عن الصور...", "Looking for pictures...")) }
                     cands = if (directImg) listOf(Candidate(url, SocialFix.nameOf(url), url, null, true, url))
@@ -562,7 +564,7 @@ object DownloadManager {
         val found = cands
         when {
             wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
-            found != null -> deliver(phId, tr("الروابط", "Links"), found, q, limit, pick, zip, batch, listOfNotNull(srcInit), listOf(found))
+            found != null -> deliver(phId, tr("الروابط", "Links"), found, q, limit, pick && !autoAll, zip, batch, listOfNotNull(srcInit), listOf(found))
             problem is PageProblem ->
                 update(phId) { copy(status = Status.FAILED, error = problem?.message) }
             else -> {
