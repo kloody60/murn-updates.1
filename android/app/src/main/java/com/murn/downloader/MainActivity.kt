@@ -210,7 +210,9 @@ fun MainScreen() {
     }
 
     // quietly look for a new version when the app opens; if there is one, the update icon gets a dot
-    LaunchedEffect(Unit) { Updater.check(ctx, silent = true) }
+    LaunchedEffect(Unit) {
+        if (ctx.getSharedPreferences("murn", 0).getBoolean("autoUpdate", true)) Updater.check(ctx, silent = true)
+    }
 
     // a link shared from another app lands in the box
     // ("Share -> Murn" from TikTok / Instagram / YouTube ...) the link starts downloading right away
@@ -502,58 +504,14 @@ fun MainScreen() {
 
     // ---------------------------------------------------- settings
     if (showSettings) {
-        AlertDialog(
-            onDismissRequest = { showSettings = false },
-            confirmButton = { TextButton(onClick = { showSettings = false }) { Text(tr("تم", "Done")) } },
-            title = { Text(tr("الإعدادات", "Settings")) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(tr("اللغة:", "Language:"))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(selected = !Lang.en, onClick = { Lang.set(ctx, false) }, label = { Text("العربية") })
-                        FilterChip(selected = Lang.en, onClick = { Lang.set(ctx, true) }, label = { Text("English") })
-                    }
-                    OutlinedButton(onClick = {
-                        showSettings = false
-                        showUpdate = true
-                        if (!Updater.hasUpdate) Updater.check(ctx)
-                    }) {
-                        Icon(Icons.Filled.SystemUpdate, null)
-                        Spacer(Modifier.width(6.dp))
-                        Text(if (Updater.hasUpdate) tr("تحديث التطبيق (يوجد تحديث جديد!)", "Update app (new version available!)") else tr("تحديث التطبيق", "Update app"))
-                    }
-                    Text(tr("عدد الفيديوهات اللي تتحمل بنفس الوقت:", "Number of videos downloading at the same time:"))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf(1, 2, 3, 4, 8, 16).forEach { n ->
-                            FilterChip(selected = parallel == n, onClick = { DownloadManager.setParallel(n) }, label = { Text("$n") })
-                        }
-                    }
-                    Text(tr("رقم كبير يبطّئ النت وممكن الموقع يحظرك.", "A big number slows the internet and the site may block you."), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(engine, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = { DownloadManager.updateEngine() }, enabled = !engineBusy) {
-                        Icon(Icons.Filled.Refresh, null)
-                        Spacer(Modifier.width(6.dp))
-                        Text(tr("تحديث المحرك (إذا موقع وقف يحمّل)", "Update engine (if a site stopped downloading)"))
-                    }
-                    OutlinedButton(onClick = { showSettings = false; showAccounts = true }) {
-                        Text(tr("حسابات المنصات (إنستغرام، فيسبوك، تيك توك، سناب...)", "Platform accounts (Instagram, Facebook, TikTok, Snap...)"))
-                    }
-                    OutlinedButton(onClick = {
-                        showSettings = false
-                        DownloadManager.qualityCheck(DownloadManager.firstUrl(input))
-                    }) { Text(tr("فحص جودات الرابط (اللي في الخانة)", "Check the link's qualities (link in the box)")) }
-                    OutlinedButton(onClick = {
-                        showSettings = false
-                        DownloadManager.diagnose(DownloadManager.firstUrl(input))
-                    }) { Text(tr("فحص الاتصال (يطلّع تقرير)", "Connection check (shows a report)")) }
-                    Text(
-                        tr("الملفات تنحفظ في: التنزيلات / Murn", "Files are saved in: Downloads / Murn"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            },
+        SettingsScreen(
+            parallel = parallel,
+            engine = engine,
+            engineBusy = engineBusy,
+            linkInBox = DownloadManager.firstUrl(input),
+            onClose = { showSettings = false },
+            onOpenUpdate = { showSettings = false; showUpdate = true },
+            onOpenAccounts = { showSettings = false; showAccounts = true },
         )
     }
 }
