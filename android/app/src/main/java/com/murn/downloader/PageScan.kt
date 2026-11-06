@@ -11,6 +11,9 @@ import java.net.URLEncoder
  * Same idea as the Windows app's pagescan.py.
  */
 object PageScan {
+    /** a desktop browser identity: many sites hand mobile browsers a low-quality 240p copy and keep HD for desktop */
+    const val DESKTOP_UA =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     private const val UA =
         "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
 
@@ -28,11 +31,11 @@ object PageScan {
     private class Rec(var title: String, var thumb: String?)
 
     /** Returns (final url after redirects, html). */
-    fun fetch(url: String): Pair<String, String> {
+    fun fetch(url: String, userAgent: String = UA): Pair<String, String> {
         var current = url
         repeat(6) {
             val c = (URL(current).openConnection() as HttpURLConnection).apply {
-                setRequestProperty("User-Agent", UA)
+                setRequestProperty("User-Agent", userAgent)
                 setRequestProperty("Accept-Language", "en,ar;q=0.8")
                 connectTimeout = 20_000
                 readTimeout = 25_000

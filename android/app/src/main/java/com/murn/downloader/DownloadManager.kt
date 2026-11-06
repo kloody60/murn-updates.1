@@ -870,7 +870,7 @@ object DownloadManager {
             addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) + nameSuffix else "%(title).100s%(height& [{}p]|)s") + ".%(ext)s").absolutePath)
             if (!isBigHost(host)) {
                 // ordinary sites: look like the phone's browser
-                addOption("--user-agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
+                addOption("--user-agent", PageScan.DESKTOP_UA)
                 addOption("--referer", referer ?: (runCatching { java.net.URL(item.url).let { it.protocol + "://" + it.host + "/" } }.getOrNull() ?: item.url))
             }
             val audio = q.audioFormat

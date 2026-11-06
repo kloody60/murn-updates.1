@@ -21,8 +21,7 @@ import java.util.Collections
  * (.m3u8 / .mp4 / .webm / .mpd) it sees is returned, and then handed to yt-dlp / ffmpeg to download.
  */
 object WebSniff {
-    private const val UA =
-        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
+    private const val UA = PageScan.DESKTOP_UA
     private val MEDIA = Regex("""\.(m3u8|mp4|webm|mpd)(\?|#|$)""", RegexOption.IGNORE_CASE)
     private val BAD = Regex("(doubleclick|googlesyndication|adservice|analytics|/ads?/|adserver|pixel|tracking)", RegexOption.IGNORE_CASE)
 

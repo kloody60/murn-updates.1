@@ -43,7 +43,21 @@ object MediaFind {
 
     /** All video links of the page with the quality read for each (null = unknown). */
     private fun scanHits(pageUrl: String): List<Hit> {
-        val (final, raw) = PageScan.fetch(pageUrl)
+        // the same page as seen by a desktop browser and by a phone: HD links are often only in one of them
+        val all = ArrayList<Hit>()
+        val seenUrls = HashSet<String>()
+        var failure: Throwable? = null
+        for (ua in listOf(PageScan.DESKTOP_UA, null)) {
+            try {
+                val r = if (ua == null) PageScan.fetch(pageUrl) else PageScan.fetch(pageUrl, ua)
+                for (h in scanHtml(r.first, r.second)) if (seenUrls.add(h.url)) all += h
+            } catch (t: Throwable) { failure = failure ?: t }
+        }
+        if (all.isEmpty() && failure != null) throw failure
+        return all
+    }
+
+    private fun scanHtml(final: String, raw: String): List<Hit> {
         val html = raw.replace("\\/", "/").replace("\\u0026", "&").replace("&amp;", "&")
 
         val hits = ArrayList<Hit>()
