@@ -526,6 +526,10 @@ fun MainScreen() {
                     }
                     OutlinedButton(onClick = {
                         showSettings = false
+                        DownloadManager.qualityCheck(DownloadManager.firstUrl(input))
+                    }) { Text(tr("فحص جودات الرابط (اللي في الخانة)", "Check the link's qualities (link in the box)")) }
+                    OutlinedButton(onClick = {
+                        showSettings = false
                         DownloadManager.diagnose(DownloadManager.firstUrl(input))
                     }) { Text(tr("فحص الاتصال (يطلّع تقرير)", "Connection check (shows a report)")) }
                     Text(

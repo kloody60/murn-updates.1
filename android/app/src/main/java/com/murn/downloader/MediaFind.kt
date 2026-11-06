@@ -41,8 +41,8 @@ object MediaFind {
 
     private val NOT_VIDEO = listOf(".jpg", ".jpeg", ".png", ".gif", ".webp", ".js", ".css", ".vtt", ".srt")
 
-    /** Best direct media link for the wanted quality, or null if the page has none. */
-    fun find(pageUrl: String, quality: Quality): Found? {
+    /** All video links of the page with the quality read for each (null = unknown). */
+    private fun scanHits(pageUrl: String): List<Hit> {
         val (final, raw) = PageScan.fetch(pageUrl)
         val html = raw.replace("\\/", "/").replace("\\u0026", "&").replace("&amp;", "&")
 
@@ -74,6 +74,16 @@ object MediaFind {
             }
             h.height = q
         }
+        return hits
+    }
+
+    /** For the "check qualities" report: every video link found in the page and the quality read for it. */
+    fun describe(pageUrl: String): List<String> =
+        scanHits(pageUrl).map { (it.height?.let { h -> "${h}p" } ?: "?") + "  " + it.url.take(110) }
+
+    /** Best direct media link for the wanted quality, or null if the page has none. */
+    fun find(pageUrl: String, quality: Quality): Found? {
+        val hits = scanHits(pageUrl)
         if (hits.isEmpty()) return null
 
         val target = quality.height ?: Int.MAX_VALUE

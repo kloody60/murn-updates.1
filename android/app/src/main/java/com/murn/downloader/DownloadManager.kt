@@ -229,6 +229,42 @@ object DownloadManager {
 
     // ------------------------------------------------------------------ diagnostics
 
+    /** Lists which qualities the engine and the page itself offer for [url] (to see why a low quality was picked). */
+    fun qualityCheck(url: String?) {
+        if (url == null) {
+            diagText.value = tr("الصق رابط الفيديو في خانة الروابط أول، وبعدين اضغط هذا الزر", "Paste the video link in the links box first, then press this button")
+            return
+        }
+        diagText.value = tr("جاري فحص الجودات...", "Checking qualities...")
+        scope.launch {
+            val sb = StringBuilder()
+            sb.appendLine(tr("النسخة ${Updater.currentName(app)}", "Version ${Updater.currentName(app)}"))
+            sb.appendLine(tr("الرابط: $url", "Link: $url"))
+            sb.appendLine()
+            sb.appendLine(tr("جودات المحرك (yt-dlp):", "Engine formats (yt-dlp):"))
+            try {
+                if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
+                val req = YoutubeDLRequest(url).apply {
+                    addOption("-F"); addOption("--no-playlist"); addOption("--socket-timeout", 30)
+                }
+                val out = YoutubeDL.getInstance().execute(req, "q_check").out.orEmpty()
+                val rows = out.lines().filter { it.isNotBlank() && !it.startsWith("[") }
+                if (rows.isEmpty()) sb.appendLine(tr("(ما رجّع شي)", "(nothing returned)")) else rows.take(45).forEach { sb.appendLine(it.take(110)) }
+            } catch (t: Throwable) {
+                sb.appendLine(tr("المحرك ما قدر يقرأ الصفحة: ", "The engine could not read the page: ") + friendlyError(t).lines().first())
+            }
+            sb.appendLine()
+            sb.appendLine(tr("روابط الفيديو اللي لقيتها في الصفحة:", "Video links found in the page:"))
+            try {
+                val l = MediaFind.describe(url)
+                if (l.isEmpty()) sb.appendLine(tr("(ما لقيت روابط فيديو في كود الصفحة)", "(no video links in the page's code)")) else l.take(25).forEach { sb.appendLine(it) }
+            } catch (t: Throwable) {
+                sb.appendLine(tr("تعذر فتح الصفحة: ", "Could not open the page: ") + (t.message ?: t.javaClass.simpleName))
+            }
+            diagText.value = sb.toString()
+        }
+    }
+
     /** One tap that tells what works: internet, YouTube, the given site, the engine, the page scan. */
     fun diagnose(siteUrl: String?) {
         diagText.value = tr("جاري الفحص... (ياخذ نص دقيقة)", "Checking... (takes about half a minute)")
