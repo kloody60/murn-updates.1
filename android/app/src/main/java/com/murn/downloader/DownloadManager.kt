@@ -654,8 +654,10 @@ object DownloadManager {
                 }
                 var ok = false
                 // 1) a video link found in the page's HTML
-                val media = runCatching { MediaFind.find(item.url, item.quality) }.getOrNull()
-                if (media != null) ok = attempt(tr("رابط من الصفحة", "Link found in the page"), buildRequest(item, tmp, media, item.url))
+                val found = runCatching { MediaFind.find(item.url, item.quality) }.getOrNull()
+                val media = found?.url
+                val nameSuffix = found?.height?.let { " [${it}p]" }.orEmpty()
+                if (media != null) ok = attempt(tr("رابط من الصفحة", "Link found in the page"), buildRequest(item, tmp, media, item.url, nameSuffix = nameSuffix))
                 if (!ok) {
                     // 2) open the page in the in-app browser (JavaScript, Cloudflare checks, cookies) and use what it got
                     update(id) { copy(info = tr("جاري فتح الصفحة بالمتصفح الداخلي...", "Opening the page in the in-app browser..."), progress = 0f) }
@@ -794,7 +796,9 @@ object DownloadManager {
         }
     }
 
-    private fun buildRequest(item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null, cookieLines: String = ""): YoutubeDLRequest {
+    private fun buildRequest(
+        item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null, cookieLines: String = "", nameSuffix: String = "",
+    ): YoutubeDLRequest {
         val q = item.quality
         val host = hostOf(item.url)
         return YoutubeDLRequest(mediaUrl ?: item.url).apply {
@@ -808,7 +812,7 @@ object DownloadManager {
             // logged-in platform accounts (Settings -> platform accounts); a private copy per download
             File(tmp, "cookies.txt").let { if (CookieStore.exportTo(app, it, cookieLines)) addOption("--cookies", it.absolutePath) }
             // a direct media link has no real title, so name the file after the video we picked
-            addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) else "%(title).100s%(height& [{}p]|)s") + ".%(ext)s").absolutePath)
+            addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) + nameSuffix else "%(title).100s%(height& [{}p]|)s") + ".%(ext)s").absolutePath)
             if (!isBigHost(host)) {
                 // ordinary sites: look like the phone's browser
                 addOption("--user-agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
