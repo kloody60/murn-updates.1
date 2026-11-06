@@ -1,11 +1,11 @@
 {
-  "versionCode": 127,
-  "versionName": "1.1.0.27",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-27/Murn-debug.apk",
-  "sha256": "d44774546f5e08250c10af80bd90ca54983968e06e6812595c75d6088db3050f",
-  "sizeBytes": 118849279,
+  "versionCode": 128,
+  "versionName": "1.1.0.28",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-28/Murn-debug.apk",
+  "sha256": "cb58871c7b3d3004c0e2e5f5e9b328b21b725c31afafc8d58d063886037bf1fb",
+  "sizeBytes": 118863323,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Photos only for Snapchat, TikTok and Instagram; recognise Snapchat video pages",
-  "notes_en": "Photos only for Snapchat, TikTok and Instagram; recognise Snapchat video pages"
+  "notes": "Resolver: desktop identity, click the player's quality buttons to capture each quality, try the www. host when the page is the mobile one, and show what was captured",
+  "notes_en": "Resolver: desktop identity, click the player's quality buttons to capture each quality, try the www. host when the page is the mobile one, and show what was captured"
 }
