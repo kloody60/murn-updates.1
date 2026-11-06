@@ -12,7 +12,7 @@ enum class Quality(private val ar: String, private val en: String, val audioForm
     P720("720p", "720p", height = 720),
     P480("480p", "480p", height = 480),
     MP3("صوت فقط (MP3)", "Audio only (MP3)", audioFormat = "mp3"),
-    M4A("صوت فقط (M4A)", "Audio only (M4A)", audioFormat = "m4a"),
+    M4A("صوت فقط (M4A)", "Audio only (M4A)", audioFormat = "m4a");
     val label: String get() = tr(ar, en)
 }
 
