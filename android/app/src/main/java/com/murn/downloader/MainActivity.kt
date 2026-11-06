@@ -355,6 +355,11 @@ fun MainScreen() {
                                     }
                                 }
                             }
+                            OutlinedButton(onClick = { input = "" }, enabled = input.isNotEmpty()) {
+                                Icon(Icons.Filled.Close, null)
+                                Spacer(Modifier.width(6.dp))
+                                Text(tr("مسح", "Clear"))
+                            }
                         }
                         OutlinedTextField(
                             value = limitText,
@@ -389,6 +394,11 @@ fun MainScreen() {
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             label = { Text(tr("اكتب اسم أو أكثر (افصل بفاصلة ،)", "Type one or more names (separate with commas)")) },
+                            trailingIcon = {
+                                if (searchText.isNotEmpty()) {
+                                    IconButton(onClick = { searchText = "" }) { Icon(Icons.Filled.Close, tr("مسح", "Clear")) }
+                                }
+                            },
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilterChip(selected = !searchInSite, onClick = { searchInSite = false }, label = { Text(tr("في يوتيوب", "On YouTube")) })
