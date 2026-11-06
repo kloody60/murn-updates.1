@@ -317,7 +317,7 @@ object DownloadManager {
         q.split(Regex("[,،;\\n]+")).map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(10)
 
     /** Reads [url] and keeps following its "next page" until about [want] videos are found (or [maxPages] pages were read). */
-    private fun scanMany(url: String, want: Int, maxPages: Int = 10): Pair<List<Candidate>, List<String>> {
+    private fun scanMany(url: String, want: Int, maxPages: Int = 40): Pair<List<Candidate>, List<String>> {
         val first = PageScan.scanWithNext(url) // a failure of the first page is reported to the user
         val seen = first.first.mapTo(HashSet()) { it.url }
         val (more, nexts) = scanNext(first.second, seen, want - first.first.size, maxPages - 1)
@@ -359,8 +359,8 @@ object DownloadManager {
     /** The next batch of a source (only videos not already in [have]). */
     private fun fetchMore(pid: String, src: PSrc, have: Set<String>): Pair<PSrc, List<Candidate>> = when (src.kind) {
         SK.PAGE -> {
-            // each press loads up to 4 more pages (about 100 more videos)
-            val (fresh, nx) = scanNext(src.nexts, have.toMutableSet(), 100, 4)
+            // each press loads up to 8 more pages (about 200 more videos)
+            val (fresh, nx) = scanNext(src.nexts, have.toMutableSet(), 200, 8)
             if (fresh.isNotEmpty()) src.copy(nexts = nx, done = nx.isEmpty()) to fresh
             else src.copy(done = true) to emptyList()
         }

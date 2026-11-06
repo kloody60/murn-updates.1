@@ -191,7 +191,7 @@ fun MainScreen() {
     var showUpdate by remember { mutableStateOf(false) }
 
     var input by rememberSaveable { mutableStateOf("") }
-    var limitText by rememberSaveable { mutableStateOf("200") }
+    var limitText by rememberSaveable { mutableStateOf("500") }
     var pick by rememberSaveable { mutableStateOf(true) }
     val zip = false // ZIP option removed from the screen
     var searchText by rememberSaveable { mutableStateOf("") }
@@ -216,7 +216,7 @@ fun MainScreen() {
     LaunchedEffect(shared) {
         shared?.let {
             MainActivity.sharedText.value = null
-            val lim = limitText.trim().toIntOrNull()?.coerceIn(1, 200) ?: 200
+            val lim = limitText.trim().toIntOrNull()?.coerceIn(1, 1000) ?: 500
             val n = DownloadManager.addLinks(it, quality, lim, pick, false)
             if (n > 0) Toast.makeText(ctx, tr("بدأ تحميل الرابط اللي شاركته", "Started downloading the link you shared"), Toast.LENGTH_SHORT).show()
             else input = if (input.isBlank()) it else input.trimEnd() + "\n" + it
@@ -247,7 +247,7 @@ fun MainScreen() {
     val running = queue.count { it.status == Status.RUNNING }
     val waiting = queue.count { it.status == Status.QUEUED || it.status == Status.RESOLVING }
     val pausedCount = queue.count { it.status == Status.PAUSED }
-    val limit = limitText.trim().toIntOrNull()?.coerceIn(1, 200) ?: 200
+    val limit = limitText.trim().toIntOrNull()?.coerceIn(1, 1000) ?: 500
 
     fun scanLinks() {
         val n = DownloadManager.addLinks(input, quality, limit, pick, zip)
@@ -339,7 +339,7 @@ fun MainScreen() {
                             onValueChange = { s -> limitText = s.filter { it.isDigit() }.take(3) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            label = { Text(tr("الحد الأقصى للمقاطع من كل رابط (1 إلى 200)", "Max videos per link (1 to 200)")) },
+                            label = { Text(tr("الحد الأقصى للمقاطع من كل رابط (1 إلى 1000)", "Max videos per link (1 to 1000)")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
                         CheckRow(tr("أخليني أختار المقاطع (نافذة مربعات) إذا الرابط فيه مقاطع كثيرة", "Let me pick the videos (thumbnail grid) when a link has many"), pick) { pick = it }
