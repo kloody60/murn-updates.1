@@ -661,7 +661,17 @@ object DownloadManager {
                 val text = t.message.orEmpty()
                 val photoUrl = SocialFix.photoUrlIn(text) ?: item.url.takeIf { SocialFix.isTikTokPhoto(it) }
                 val isTikTok = photoUrl != null || hostOf(item.url).contains("tiktok.")
-                if (isTikTok) {
+                if (text.contains("extracted extension", true)) {
+                    // yt-dlp refuses files whose extension looks odd (Snapchat links end in a random code): allow it,
+                    // and let ffmpeg repack the file into a normal mp4
+                    update(id) { copy(info = tr("جاري المحاولة بطريقة بديلة...", "Trying an alternative way..."), progress = 0f) }
+                    try {
+                        runYtdlp(id, buildRequest(item, tmp, unsafeExt = true))
+                    } catch (t2: Throwable) {
+                        if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
+                        throw PageProblem(friendlyError(t2))
+                    }
+                } else if (isTikTok) {
                     // yt-dlp cannot read TikTok photo posts, and TikTok often serves yt-dlp an anti-bot page ("Unable to
                     // extract universal data"): open the post in the in-app browser and download from its data
                     val done = try {
@@ -852,7 +862,7 @@ object DownloadManager {
     }
 
     private fun buildRequest(
-        item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null, cookieLines: String = "", nameSuffix: String = "",
+        item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null, cookieLines: String = "", nameSuffix: String = "", unsafeExt: Boolean = false,
     ): YoutubeDLRequest {
         val q = item.quality
         val host = hostOf(item.url)
@@ -864,6 +874,10 @@ object DownloadManager {
             addOption("--retries", 5)
             addOption("--fragment-retries", 5)
             addOption("--socket-timeout", 30)
+            if (unsafeExt) {
+                addOption("--compat-options", "allow-unsafe-ext")
+                addOption("--remux-video", "mp4")
+            }
             // logged-in platform accounts (Settings -> platform accounts); a private copy per download
             File(tmp, "cookies.txt").let { if (CookieStore.exportTo(app, it, cookieLines)) addOption("--cookies", it.absolutePath) }
             // a direct media link has no real title, so name the file after the video we picked
