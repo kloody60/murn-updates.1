@@ -1,11 +1,11 @@
 {
-  "versionCode": 128,
-  "versionName": "1.1.0.28",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-28/Murn-debug.apk",
-  "sha256": "cb58871c7b3d3004c0e2e5f5e9b328b21b725c31afafc8d58d063886037bf1fb",
-  "sizeBytes": 118863323,
+  "versionCode": 129,
+  "versionName": "1.1.0.29",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-29/Murn-debug.apk",
+  "sha256": "ab21736b2ce333f59fc32605cb1e006a7b860bca4ea19abd433205592c07e0e3",
+  "sizeBytes": 118871275,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Resolver: desktop identity, click the player's quality buttons to capture each quality, try the www. host when the page is the mobile one, and show what was captured",
-  "notes_en": "Resolver: desktop identity, click the player's quality buttons to capture each quality, try the www. host when the page is the mobile one, and show what was captured"
+  "notes": "Strict quality: skip clips that are not available at the chosen resolution (checked before and after download)",
+  "notes_en": "Strict quality: skip clips that are not available at the chosen resolution (checked before and after download)"
 }
