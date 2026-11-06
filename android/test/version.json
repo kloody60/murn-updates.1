@@ -1,11 +1,11 @@
 {
-  "versionCode": 125,
-  "versionName": "1.1.0.25",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-25/Murn-debug.apk",
-  "sha256": "cdaccbc3e507d8149100f3f229545dcdaf8e34cff715d7ea59872e5af0ece862",
-  "sizeBytes": 118829283,
+  "versionCode": 126,
+  "versionName": "1.1.0.26",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-26/Murn-debug.apk",
+  "sha256": "5d79082bfbdeb2d743745c534c23d60a2811ebef4cfb4651c181847a1152102b",
+  "sizeBytes": 118848423,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Downloads from unsupported sites: pass the browser session identity (UA + cookies) with the captured URL, fall back to the page URL, and show what the browser captured when it fails",
-  "notes_en": "Downloads from unsupported sites: pass the browser session identity (UA + cookies) with the captured URL, fall back to the page URL, and show what the browser captured when it fails"
+  "notes": "Photo posts (TikTok/Instagram/Snapchat...): extract the photos from the page, show them in the selection grid, download them with the browser identity into Pictures/Murn Video",
+  "notes_en": "Photo posts (TikTok/Instagram/Snapchat...): extract the photos from the page, show them in the selection grid, download them with the browser identity into Pictures/Murn Video"
 }
