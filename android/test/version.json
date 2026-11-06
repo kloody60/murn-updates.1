@@ -1,11 +1,11 @@
 {
-  "versionCode": 131,
-  "versionName": "1.1.0.31",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-31/Murn-debug.apk",
-  "sha256": "6f3ea7191f34d35ce456d3bf74bd20a8a568f18f75a6750becf49e025d64af48",
-  "sizeBytes": 118880971,
+  "versionCode": 133,
+  "versionName": "1.1.0.33",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-33/Murn-debug.apk",
+  "sha256": "117e301c04590750e1c869713c48cccec1119a2e4ab842173b4614944702a3e1",
+  "sizeBytes": 118907359,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Bulk card: clear button for the links box",
-  "notes_en": "Bulk card: clear button for the links box"
+  "notes": "Bulk card redesign: download type chips (video / photos), round clear button, photo mode scans post photos directly",
+  "notes_en": "Bulk card redesign: download type chips (video / photos), round clear button, photo mode scans post photos directly"
 }
