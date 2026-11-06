@@ -1,11 +1,11 @@
 {
-  "versionCode": 121,
-  "versionName": "1.1.0.21",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-21/Murn-debug.apk",
-  "sha256": "10b56650de60c95c2f81eb73083c4f2b615d02ab583a2899a5f6da57105f3eb6",
-  "sizeBytes": 118805523,
+  "versionCode": 122,
+  "versionName": "1.1.0.22",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-22/Murn-debug.apk",
+  "sha256": "dcad6ad9651891a5f01381c3d97e7202c87e12cc83016a2ab5b90c415b9db391",
+  "sizeBytes": 118805531,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Selection grid: put the download button at the top",
-  "notes_en": "Selection grid: put the download button at the top"
+  "notes": "Selection grid: download button in the select-all row (left side)",
+  "notes_en": "Selection grid: download button in the select-all row (left side)"
 }
