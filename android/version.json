@@ -1,11 +1,11 @@
 {
-  "versionCode": 4,
-  "versionName": "1.0.3",
-  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.3/MurnVideo-1.0.3.apk",
-  "sha256": "429572fa33373d488f6b2a069548f97e34069b57c8ca099f3069cb53ec54cfd7",
-  "sizeBytes": 46397895,
+  "versionCode": 5,
+  "versionName": "1.0.4",
+  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.4/MurnVideo-1.0.4.apk",
+  "sha256": "c429ba2d7a47d18af273612c1aaa8fc271276e3fb85e493f24fff2e08d6439e5",
+  "sizeBytes": 46398507,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "إصلاح انهيار شاشة التعديل: المعاينة المحسّنة صارت اختيارية (تجريبية) ولا تعمل إلا عند اختيارها، وحماية إضافية عند تغيير صيغة الفيديو.",
-  "notes_en": "Fix for the editor crash: the enhanced preview is now optional (beta) and only runs when selected, plus extra protection when changing the video format."
+  "notes": "إصلاح انهيار «ابدأ التحسين» على أندرويد 15 وما فوق (جوالات سامسونج الحديثة)، وصار أي فشل في المعالجة بالخلفية يظهر كرسالة بدل إغلاق التطبيق.",
+  "notes_en": "Fix the crash on “Start enhancing” on Android 15 and newer (recent Samsung phones); a background-processing failure now shows a message instead of closing the app."
 }
