@@ -808,7 +808,7 @@ object DownloadManager {
             // logged-in platform accounts (Settings -> platform accounts); a private copy per download
             File(tmp, "cookies.txt").let { if (CookieStore.exportTo(app, it, cookieLines)) addOption("--cookies", it.absolutePath) }
             // a direct media link has no real title, so name the file after the video we picked
-            addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) else "%(title).100s") + ".%(ext)s").absolutePath)
+            addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) else "%(title).100s%(height& [{}p]|)s") + ".%(ext)s").absolutePath)
             if (!isBigHost(host)) {
                 // ordinary sites: look like the phone's browser
                 addOption("--user-agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
@@ -822,14 +822,11 @@ object DownloadManager {
                 addOption("--audio-quality", "0")
             } else {
                 val h = q.height
-                if (h == null) {
-                    addOption("-f", "bv*+ba/b")
-                    addOption("-S", "res,vcodec:h264,acodec:m4a")
-                } else {
-                    addOption("-f", "bv*[height<=$h]+ba/b[height<=$h]/b")
-                    // phones play h264 best, but YouTube only has h264 up to 1080p -> above that resolution wins
-                    addOption("-S", if (h > 1080) "res,vcodec:h264,acodec:m4a" else "vcodec:h264,res,acodec:m4a")
-                }
+                // Pick by resolution first (res = the smaller side, so vertical videos like TikTok / Shorts are judged right).
+                // "res:720" = the best resolution up to 720; a hard height filter would drop vertical 720x1280 videos
+                // and fall back to a tiny one. h264 is only the tie-breaker between formats of the same resolution.
+                addOption("-f", "bv*+ba/b")
+                addOption("-S", (if (h == null) "res" else "res:$h") + ",vcodec:h264,acodec:m4a")
                 addOption("--merge-output-format", "mp4")
             }
         }
