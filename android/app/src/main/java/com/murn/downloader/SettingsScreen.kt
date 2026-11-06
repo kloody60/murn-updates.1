@@ -3,7 +3,13 @@ package com.murn.downloader
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,12 +46,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-private val Bg = Color(0xFF0A0F1E)
-private val CardBg = Color(0xFF111A2F)
-private val Line = Color(0xFF2B3558)
-private val Mint = Color(0xFF63DCBD)
-private val Muted = Color(0xFFB4BBCD)
-private val ChipOn = Color(0xFF3B3650)
+private val Bg = Palette.Bg
+private val CardBg = Palette.CardBg
+private val Line = Palette.Line
+private val Mint = Palette.Mint
+private val Muted = Palette.Muted
+private val ChipOn = Palette.ChipOn
 
 /** Full-screen settings page: a title, then cards (language, app + updates, download tool, accounts, checks). */
 @Composable
@@ -64,6 +70,7 @@ fun SettingsScreen(
 
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize(), color = Bg) {
+          Box(Modifier.fillMaxSize()) {
             Column(Modifier.systemBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
                 // ---- title bar
                 Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -117,9 +124,9 @@ fun SettingsScreen(
                 SCard {
                     Text(tr("عدد الفيديوهات اللي تتحمل بنفس الوقت", "Videos downloading at the same time"), color = Color.White, fontSize = 17.sp)
                     Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf(1, 2, 3, 4, 8, 16).forEach { n ->
-                            NumChip(n.toString(), parallel == n) { DownloadManager.setParallel(n) }
+                            NumChip(n.toString(), parallel == n, Modifier.weight(1f)) { DownloadManager.setParallel(n) }
                         }
                     }
                     Text(
@@ -178,6 +185,10 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.height(28.dp))
             }
+            // solid bars over the system areas, so scrolled content never shows behind the clock / the buttons
+            Spacer(Modifier.align(Alignment.TopCenter).fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(Bg))
+            Spacer(Modifier.align(Alignment.BottomCenter).fillMaxWidth().windowInsetsBottomHeight(WindowInsets.navigationBars).background(Bg))
+          }
         }
     }
 }
@@ -221,13 +232,13 @@ private fun LangChip(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun NumChip(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun NumChip(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(text, fontSize = 16.sp, color = if (selected) Mint else Color.White) },
+        label = { Text(text, fontSize = 16.sp, color = if (selected) Mint else Color.White, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center) },
         shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.height(44.dp),
+        modifier = modifier.height(44.dp),
         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = ChipOn, containerColor = Color.Transparent),
         border = FilterChipDefaults.filterChipBorder(enabled = true, selected = selected, borderColor = Line, selectedBorderColor = ChipOn),
     )

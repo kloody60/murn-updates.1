@@ -155,22 +155,36 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** The one colour palette of the whole app (the same navy + mint as the Settings page). */
+object Palette {
+    val Bg = Color(0xFF0A0F1E)
+    val CardBg = Color(0xFF111A2F)
+    val Raised = Color(0xFF16203A)
+    val Line = Color(0xFF2B3558)
+    val Mint = Color(0xFF63DCBD)
+    val OnMint = Color(0xFF0B2A24)
+    val Text = Color(0xFFE8ECF6)
+    val Muted = Color(0xFFB4BBCD)
+    val ChipOn = Color(0xFF3B3650)
+    val Gold = Color(0xFFE8C35A)
+    val Error = Color(0xFFFF8A8A)
+}
+
 @Composable
 fun MurnTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val colors = if (dark) {
-        darkColorScheme(
-            primary = Color(0xFF3DCB85), onPrimary = Color(0xFF00210F),
-            background = Color(0xFF14161C), surface = Color(0xFF14161C),
-            surfaceVariant = Color(0xFF262A33), onSurface = Color(0xFFECEFF4),
-            onSurfaceVariant = Color(0xFFB3B8C4), secondary = Color(0xFFE8C35A),
-        )
-    } else {
-        lightColorScheme(
-            primary = Color(0xFF0E7A43), secondary = Color(0xFF9A7B12),
-            background = Color(0xFFF3F4F7), surface = Color(0xFFF3F4F7), surfaceVariant = Color(0xFFFFFFFF),
-        )
-    }
+    val colors = darkColorScheme(
+        primary = Palette.Mint, onPrimary = Palette.OnMint,
+        primaryContainer = Palette.ChipOn, onPrimaryContainer = Palette.Text,
+        secondary = Palette.Gold, onSecondary = Color(0xFF2A2000),
+        secondaryContainer = Palette.ChipOn, onSecondaryContainer = Palette.Text,
+        background = Palette.Bg, onBackground = Palette.Text,
+        surface = Palette.Bg, onSurface = Palette.Text,
+        surfaceVariant = Palette.CardBg, onSurfaceVariant = Palette.Muted,
+        surfaceContainerLowest = Palette.Bg, surfaceContainerLow = Palette.CardBg, surfaceContainer = Palette.Raised,
+        surfaceContainerHigh = Palette.Raised, surfaceContainerHighest = Palette.Raised,
+        outline = Palette.Line, outlineVariant = Palette.Line,
+        error = Palette.Error, onError = Color(0xFF3B0A0A),
+    )
     MaterialTheme(colorScheme = colors, content = content)
 }
 
