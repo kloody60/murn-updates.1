@@ -12,8 +12,8 @@ android {
         applicationId = "com.murn.downloader"
         minSdk = 24
         targetSdk = 35
-        versionCode = 25
-        versionName = "1.0.24"
+        versionCode = 26
+        versionName = "1.0.25"
         // arm64 + arm32 only: covers practically every phone and keeps the APK small
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }

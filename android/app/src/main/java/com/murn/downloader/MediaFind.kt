@@ -1,6 +1,9 @@
 package com.murn.downloader
 
+import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 /**
  * Finds the direct video file (mp4 / webm / m3u8) inside an ordinary video page, reading the page with the phone's own
@@ -91,9 +94,57 @@ object MediaFind {
         return hits
     }
 
-    /** For the "check qualities" report: every video link found in the page and the quality read for it. */
-    fun describe(pageUrl: String): List<String> =
-        scanHits(pageUrl).map { (it.height?.let { h -> "${h}p" } ?: "?") + "  " + it.url.take(110) }
+    /** For the "check qualities" report: every video link found in the page, its quality (if labeled) and its file size. */
+    fun describe(pageUrl: String): List<String> {
+        val hits = scanHits(pageUrl).take(14)
+        val sizes = probeAll(hits.map { it.url }, pageUrl)
+        return hits.map { h ->
+            val mb = sizes[h.url]?.takeIf { it > 0 }?.let { "%.1f MB".format(it / 1048576.0) } ?: "? MB"
+            (h.height?.let { q -> "${q}p" } ?: "?") + "  " + mb + "  " + h.url.take(100)
+        }
+    }
+
+    /** Size in bytes of the file behind [url] (HEAD, else a 1-byte ranged GET), or -1. Bigger = higher quality for the same video. */
+    private fun probeSize(url: String, referer: String): Long {
+        fun open(method: String) = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = method
+            connectTimeout = 7_000
+            readTimeout = 7_000
+            instanceFollowRedirects = true
+            setRequestProperty("User-Agent", PageScan.DESKTOP_UA)
+            setRequestProperty("Referer", referer)
+            if (method == "GET") setRequestProperty("Range", "bytes=0-0")
+        }
+        runCatching {
+            val c = open("HEAD")
+            try { if (c.responseCode in 200..299 && c.contentLengthLong > 0) return c.contentLengthLong } finally { c.disconnect() }
+        }
+        return runCatching {
+            val c = open("GET")
+            try {
+                c.responseCode
+                c.getHeaderField("Content-Range")?.substringAfter('/')?.trim()?.toLongOrNull() ?: c.contentLengthLong
+            } finally { c.disconnect() }
+        }.getOrDefault(-1L)
+    }
+
+    private fun probeAll(urls: List<String>, referer: String): Map<String, Long> {
+        if (urls.isEmpty()) return emptyMap()
+        val pool = Executors.newFixedThreadPool(6)
+        return try {
+            val tasks = urls.map { u -> Callable { u to probeSize(u, referer) } }
+            pool.invokeAll(tasks).mapNotNull { runCatching { it.get() }.getOrNull() }.toMap()
+        } finally {
+            pool.shutdownNow()
+        }
+    }
+
+    /** With several files of the same video and no labels: the biggest file is the highest quality. */
+    private fun bySize(direct: List<Hit>, pageUrl: String): Hit? {
+        if (direct.size < 2) return null
+        val sizes = probeAll(direct.take(12).map { it.url }, pageUrl)
+        return direct.take(12).filter { (sizes[it.url] ?: -1L) > 0 }.maxByOrNull { sizes[it.url]!! }
+    }
 
     /** Best direct media link for the wanted quality, or null if the page has none. */
     fun find(pageUrl: String, quality: Quality): Found? {
@@ -110,8 +161,7 @@ object MediaFind {
         val pick = when {
             best != null && best.height!! >= minOf(target, 1080) -> best
             hls != null -> hls
-            best != null -> best
-            else -> hits.firstOrNull { !isHls(it) } ?: hits.first()
+            else -> bySize(hits.filter { !isHls(it) }, pageUrl) ?: best ?: hits.firstOrNull { !isHls(it) } ?: hits.first()
         }
         return Found(pick.url, pick.height)
     }
