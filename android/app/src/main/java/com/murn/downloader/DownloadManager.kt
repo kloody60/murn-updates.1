@@ -733,7 +733,12 @@ object DownloadManager {
                 update(id) { copy(info = tr("جاري الحفظ في التنزيلات...", "Saving to Downloads..."), progress = 1f) }
                 saveToDownloads(file.name, mimeFor(file.name)) { out -> file.inputStream().use { it.copyTo(out) } }
             }
-            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = file.name) }
+            val size = videoSize(file)
+            val side = size?.let { minOf(it.first, it.second) }
+            val resText = size?.let { "${side}p (${it.first}x${it.second})" }
+            val wanted = item.quality.height
+            val low = side != null && wanted != null && side < wanted * 0.8
+            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = file.name, resolution = resText, lowRes = low) }
         } catch (t: Throwable) {
             val userCanceled = id in canceled
             val userPaused = id in pausedIds && !userCanceled
@@ -799,6 +804,20 @@ object DownloadManager {
         ) { p -> update(id) { copy(progress = p, info = tr("جاري التحميل...", "Downloading...")) } }
         return false
     }
+
+    /** Real (width, height) of a downloaded video, turned upright if it carries a rotation flag. */
+    private fun videoSize(f: File): Pair<Int, Int>? = runCatching {
+        val r = android.media.MediaMetadataRetriever()
+        try {
+            r.setDataSource(f.absolutePath)
+            val w = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull()
+            val h = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull()
+            val rot = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
+            if (w == null || h == null) null else if (rot == 90 || rot == 270) h to w else w to h
+        } finally {
+            r.release()
+        }
+    }.getOrNull()
 
     private fun hostOf(url: String): String = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
 

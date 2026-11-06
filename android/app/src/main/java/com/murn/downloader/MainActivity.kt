@@ -698,11 +698,23 @@ private fun ItemRow(item: Item) {
                         LinearProgressIndicator(progress = { item.progress }, modifier = Modifier.fillMaxWidth())
                         Text(tr("⏸ متوقف مؤقتاً (${(item.progress * 100).toInt()}%)", "⏸ Paused (${(item.progress * 100).toInt()}%)"), style = MaterialTheme.typography.bodySmall)
                     }
-                    Status.DONE -> Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(6.dp))
-                        Text(if (item.zip) tr("تم (يدخل في ملف ZIP)", "Done (goes into the ZIP file)") else tr("تم التحميل", "Downloaded"), style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary)
+                    Status.DONE -> Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                (if (item.zip) tr("تم (يدخل في ملف ZIP)", "Done (goes into the ZIP file)") else tr("تم التحميل", "Downloaded")) +
+                                    (item.resolution?.let { " · $it" } ?: ""),
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        if (item.lowRes) {
+                            Text(
+                                tr("⚠ أقل من الجودة اللي اخترتها. جرّب «فحص جودات الرابط» من الإعدادات",
+                                    "⚠ Lower than the quality you chose. Try “Check the link's qualities” in Settings"),
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
                     }
                     Status.FAILED -> Row(verticalAlignment = Alignment.Top) {
                         Icon(Icons.Filled.Error, null, tint = MaterialTheme.colorScheme.error)

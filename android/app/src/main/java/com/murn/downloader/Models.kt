@@ -32,6 +32,10 @@ data class Item(
     val info: String = "",
     val error: String? = null,
     val savedName: String? = null,
+    /** real size of the downloaded video, e.g. "720p (720x1280)" */
+    val resolution: String? = null,
+    /** the video came out clearly smaller than the quality the user chose */
+    val lowRes: Boolean = false,
 ) {
     /** counts as "work still to do" (keeps the background service alive) */
     val active: Boolean get() = status == Status.RESOLVING || status == Status.QUEUED || status == Status.RUNNING
