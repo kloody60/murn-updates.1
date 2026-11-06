@@ -133,7 +133,7 @@ object PageScan {
                 bestScore = score; bestAction = fa["action"].orEmpty(); bestInputs = inputs; bestTexts = texts
             }
         }
-        if (bestScore < 0) error("ما لقيت خانة بحث في هذا الموقع")
+        if (bestScore < 0) error(tr("ما لقيت خانة بحث في هذا الموقع", "No search box found on this site"))
 
         val nameField = bestTexts.firstOrNull { it.lowercase() in prefer } ?: bestTexts.first()
         val params = bestInputs.filter { !it.name.isNullOrEmpty() && it.type == "hidden" }.map { it.name!! to it.value } +

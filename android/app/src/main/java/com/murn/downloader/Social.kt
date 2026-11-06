@@ -48,18 +48,20 @@ private const val MOBILE_UA =
  * to the platform they belong to.
  */
 object CookieStore {
-    class Platform(val key: String, val label: String, val loginUrl: String, val cookieUrls: List<String>, val domains: List<String>)
+    class Platform(val key: String, private val labelAr: String, private val labelEn: String, val loginUrl: String, val cookieUrls: List<String>, val domains: List<String>) {
+        val label: String get() = tr(labelAr, labelEn)
+    }
 
     val platforms = listOf(
-        Platform("instagram", "إنستغرام", "https://www.instagram.com/accounts/login/",
+        Platform("instagram", "إنستغرام", "Instagram", "https://www.instagram.com/accounts/login/",
             listOf("https://www.instagram.com"), listOf("instagram.com")),
-        Platform("facebook", "فيسبوك", "https://m.facebook.com/login/",
+        Platform("facebook", "فيسبوك", "Facebook", "https://m.facebook.com/login/",
             listOf("https://www.facebook.com", "https://m.facebook.com"), listOf("facebook.com")),
-        Platform("tiktok", "تيك توك", "https://www.tiktok.com/login",
+        Platform("tiktok", "تيك توك", "TikTok", "https://www.tiktok.com/login",
             listOf("https://www.tiktok.com"), listOf("tiktok.com")),
-        Platform("snapchat", "سناب شات", "https://accounts.snapchat.com/accounts/v2/login",
+        Platform("snapchat", "سناب شات", "Snapchat", "https://accounts.snapchat.com/accounts/v2/login",
             listOf("https://www.snapchat.com", "https://accounts.snapchat.com"), listOf("snapchat.com")),
-        Platform("x", "إكس (تويتر)", "https://x.com/i/flow/login",
+        Platform("x", "إكس (تويتر)", "X (Twitter)", "https://x.com/i/flow/login",
             listOf("https://x.com", "https://twitter.com"), listOf("x.com", "twitter.com")),
     )
 
@@ -189,7 +191,7 @@ object SocialFix {
                     }
                 }
             }
-            if (got == 0L) error("الملف فاضي")
+            if (got == 0L) error(tr("الملف فاضي", "The file is empty"))
         } finally {
             c.disconnect()
         }
@@ -248,13 +250,13 @@ fun AccountsDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("تم") } },
-        title = { Text("حسابات المنصات") },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("تم", "Done")) } },
+        title = { Text(tr("حسابات المنصات", "Platform accounts")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "سجّل دخولك مرة وحدة عشان التطبيق يقدر يحمّل اللي يحتاج حساب (ستوري، منشورات خاصة بحسابك، مقاطع محدودة العمر...). " +
-                            "المقاطع العامة تحمّلها بدون تسجيل. بيانات الدخول تبقى بالجوال بس.",
+                    tr("سجّل دخولك مرة وحدة عشان التطبيق يقدر يحمّل اللي يحتاج حساب (ستوري، منشورات خاصة بحسابك، مقاطع محدودة العمر...). ", "Sign in once so the app can download what needs an account (stories, posts private to your account, age-restricted videos...). ") +
+                            tr("المقاطع العامة تحمّلها بدون تسجيل. بيانات الدخول تبقى بالجوال بس.", "Public videos download without signing in. Your login data stays on the phone only."),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -262,11 +264,11 @@ fun AccountsDialog(onDismiss: () -> Unit) {
                 CookieStore.platforms.forEach { p ->
                     val on = logged[p] == true
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(p.label + if (on) "  ✔ مسجّل" else "")
+                        Text(p.label + if (on) tr("  ✔ مسجّل", "  ✔ signed in") else "")
                         if (on) {
-                            OutlinedButton(onClick = { CookieStore.logout(ctx, p); refresh++ }) { Text("خروج") }
+                            OutlinedButton(onClick = { CookieStore.logout(ctx, p); refresh++ }) { Text(tr("خروج", "Sign out")) }
                         } else {
-                            Button(onClick = { loginFor = p }) { Text("تسجيل دخول") }
+                            Button(onClick = { loginFor = p }) { Text(tr("تسجيل دخول", "Sign in")) }
                         }
                     }
                 }
@@ -292,12 +294,12 @@ private fun LoginDialog(p: CookieStore.Platform, onSaved: () -> Unit, onCancel: 
                 Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = {
                         val n = CookieStore.save(ctx, p)
-                        if (n > 0) onSaved() else msg = "ما لقيت جلسة دخول، سجّل دخولك أول ثم اضغط حفظ"
-                    }) { Text("تم تسجيل الدخول - احفظ") }
-                    OutlinedButton(onClick = onCancel) { Text("إلغاء") }
+                        if (n > 0) onSaved() else msg = tr("ما لقيت جلسة دخول، سجّل دخولك أول ثم اضغط حفظ", "No login session found, sign in first then tap Save")
+                    }) { Text(tr("تم تسجيل الدخول - احفظ", "Signed in - Save")) }
+                    OutlinedButton(onClick = onCancel) { Text(tr("إلغاء", "Cancel")) }
                 }
                 msg?.let { Text(it, Modifier.padding(horizontal = 12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-                Text("سجّل دخولك في ${p.label} بالصفحة تحت، وبعدها اضغط «احفظ».", Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                Text(tr("سجّل دخولك في ${p.label} بالصفحة تحت، وبعدها اضغط «احفظ».", "Sign in to ${p.label} on the page below, then tap “Save”."), Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.bodySmall)
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),

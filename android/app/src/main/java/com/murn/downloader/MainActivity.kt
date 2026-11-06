@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
         publishShareTarget()
         setContent {
             MurnTheme {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CompositionLocalProvider(LocalLayoutDirection provides if (Lang.en) LayoutDirection.Ltr else LayoutDirection.Rtl) {
                     MainScreen()
                 }
             }
@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
     private fun publishShareTarget() {
         runCatching {
             val info = androidx.core.content.pm.ShortcutInfoCompat.Builder(this, "murn_share")
-                .setShortLabel("تحميل بمرن")
+                .setShortLabel(tr("تحميل بمرن", "Download with Murn"))
                 .setLongLived(true)
                 .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(this, R.drawable.ic_launcher))
                 .setIntent(Intent(this, MainActivity::class.java).setAction(Intent.ACTION_VIEW))
@@ -217,7 +217,7 @@ fun MainScreen() {
             MainActivity.sharedText.value = null
             val lim = limitText.trim().toIntOrNull()?.coerceIn(1, 200) ?: 200
             val n = DownloadManager.addLinks(it, quality, lim, pick, false)
-            if (n > 0) Toast.makeText(ctx, "بدأ تحميل الرابط اللي شاركته", Toast.LENGTH_SHORT).show()
+            if (n > 0) Toast.makeText(ctx, tr("بدأ تحميل الرابط اللي شاركته", "Started downloading the link you shared"), Toast.LENGTH_SHORT).show()
             else input = if (input.isBlank()) it else input.trimEnd() + "\n" + it
         }
     }
@@ -237,7 +237,7 @@ fun MainScreen() {
         if (url != prefs.getString("lastClip", null) && !input.contains(url)) {
             prefs.edit().putString("lastClip", url).apply()
             input = if (input.isBlank()) url else input.trimEnd() + "\n" + url
-            Toast.makeText(ctx, "لقيت رابط منسوخ وحطيته في الخانة", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, tr("لقيت رابط منسوخ وحطيته في الخانة", "Found a copied link and put it in the box"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -251,17 +251,17 @@ fun MainScreen() {
     fun scanLinks() {
         val n = DownloadManager.addLinks(input, quality, limit, pick, zip)
         if (n == 0) {
-            Toast.makeText(ctx, "ما لقيت أي رابط في النص", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, tr("ما لقيت أي رابط في النص", "No link found in the text"), Toast.LENGTH_SHORT).show()
         } else {
             input = ""
-            Toast.makeText(ctx, "جاري فحص $n رابط", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, tr("جاري فحص $n رابط", "Scanning $n link(s)"), Toast.LENGTH_SHORT).show()
         }
     }
 
     fun doSearch() {
         val site = if (searchInSite) DownloadManager.firstUrl(input) else null
         if (searchInSite && site == null) {
-            Toast.makeText(ctx, "حط رابط الموقع في الخانة اللي فوق أول، وبعدين ابحث", Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx, tr("حط رابط الموقع في الخانة اللي فوق أول، وبعدين ابحث", "Put the site link in the box above first, then search"), Toast.LENGTH_LONG).show()
             return
         }
         DownloadManager.search(searchText.trim(), site, quality, limit, pick, zip)
@@ -275,18 +275,18 @@ fun MainScreen() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Download, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(8.dp))
-                        Text("مرن · محمّل الفيديوهات")
+                        Text(tr("مرن · محمّل الفيديوهات", "Murn · Video Downloader"))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showUpdate = true; if (!Updater.hasUpdate) Updater.check(ctx) }) {
                         if (Updater.hasUpdate) {
-                            BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.SystemUpdate, "تحديث التطبيق", tint = MaterialTheme.colorScheme.secondary) }
+                            BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.SystemUpdate, tr("تحديث التطبيق", "Update app"), tint = MaterialTheme.colorScheme.secondary) }
                         } else {
-                            Icon(Icons.Filled.SystemUpdate, "تحديث التطبيق")
+                            Icon(Icons.Filled.SystemUpdate, tr("تحديث التطبيق", "Update app"))
                         }
                     }
-                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Filled.Settings, "الإعدادات") }
+                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Filled.Settings, tr("الإعدادات", "Settings")) }
                 },
             )
         },
@@ -299,7 +299,7 @@ fun MainScreen() {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("الصق الروابط (رابط بكل سطر) — يوتيوب / تيك توك / تويتر / انستغرام وغيرها، أو رابط قائمة / قناة / صفحة موقع:",
+                        Text(tr("الصق الروابط (رابط بكل سطر) — يوتيوب / تيك توك / تويتر / انستغرام وغيرها، أو رابط قائمة / قناة / صفحة موقع:", "Paste links (one per line) — YouTube / TikTok / Twitter / Instagram and more, or a playlist / channel / site page link:"),
                             style = MaterialTheme.typography.bodyMedium)
                         OutlinedTextField(
                             value = input,
@@ -318,11 +318,11 @@ fun MainScreen() {
                             }) {
                                 Icon(Icons.Filled.ContentPaste, null)
                                 Spacer(Modifier.width(6.dp))
-                                Text("لصق")
+                                Text(tr("لصق", "Paste"))
                             }
                             Box {
                                 OutlinedButton(onClick = { qualityMenu = true }) {
-                                    Text("الجودة: ${quality.label}", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(tr("الجودة: ${quality.label}", "Quality: ${quality.label}"), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                                 DropdownMenu(expanded = qualityMenu, onDismissRequest = { qualityMenu = false }) {
                                     Quality.entries.forEach { q ->
@@ -338,10 +338,10 @@ fun MainScreen() {
                             onValueChange = { s -> limitText = s.filter { it.isDigit() }.take(3) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            label = { Text("الحد الأقصى للمقاطع من كل رابط (1 إلى 200)") },
+                            label = { Text(tr("الحد الأقصى للمقاطع من كل رابط (1 إلى 200)", "Max videos per link (1 to 200)")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
-                        CheckRow("أخليني أختار المقاطع (نافذة مربعات) إذا الرابط فيه مقاطع كثيرة", pick) { pick = it }
+                        CheckRow(tr("أخليني أختار المقاطع (نافذة مربعات) إذا الرابط فيه مقاطع كثيرة", "Let me pick the videos (thumbnail grid) when a link has many"), pick) { pick = it }
                         Button(
                             onClick = { scanLinks() },
                             enabled = input.isNotBlank(),
@@ -349,7 +349,7 @@ fun MainScreen() {
                         ) {
                             Icon(Icons.Filled.Download, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("فحص الروابط وتحميلها")
+                            Text(tr("فحص الروابط وتحميلها", "Scan links and download"))
                         }
                     }
                 }
@@ -359,17 +359,17 @@ fun MainScreen() {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("بحث بالاسم", style = MaterialTheme.typography.titleSmall)
+                        Text(tr("بحث بالاسم", "Search by name"), style = MaterialTheme.typography.titleSmall)
                         OutlinedTextField(
                             value = searchText,
                             onValueChange = { searchText = it },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            label = { Text("اكتب اسم اللي تبيه") },
+                            label = { Text(tr("اكتب اسم اللي تبيه", "Type what you are looking for")) },
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(selected = !searchInSite, onClick = { searchInSite = false }, label = { Text("في يوتيوب") })
-                            FilterChip(selected = searchInSite, onClick = { searchInSite = true }, label = { Text("داخل الموقع اللي فوق") })
+                            FilterChip(selected = !searchInSite, onClick = { searchInSite = false }, label = { Text(tr("في يوتيوب", "On YouTube")) })
+                            FilterChip(selected = searchInSite, onClick = { searchInSite = true }, label = { Text(tr("داخل الموقع اللي فوق", "Inside the site above")) })
                         }
                         Button(
                             onClick = { doSearch() },
@@ -378,7 +378,7 @@ fun MainScreen() {
                         ) {
                             Icon(Icons.Filled.Search, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("ابحث")
+                            Text(tr("ابحث", "Search"))
                         }
                     }
                 }
@@ -389,25 +389,25 @@ fun MainScreen() {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            "الكل ${queue.size} · تم $done · شغال $running · ينتظر $waiting" +
-                                    (if (pausedCount > 0) " · متوقف $pausedCount" else "") +
-                                    (if (failed > 0) " · فشل $failed" else ""),
+                            tr("الكل ${queue.size} · تم $done · شغال $running · ينتظر $waiting", "All ${queue.size} · done $done · running $running · waiting $waiting") +
+                                    (if (pausedCount > 0) tr(" · متوقف $pausedCount", " · paused $pausedCount") else "") +
+                                    (if (failed > 0) tr(" · فشل $failed", " · failed $failed") else ""),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (paused || pausedCount > 0) {
                                 TextButton(onClick = { DownloadManager.resume() }) {
-                                    Icon(Icons.Filled.PlayArrow, null); Spacer(Modifier.width(4.dp)); Text("استئناف")
+                                    Icon(Icons.Filled.PlayArrow, null); Spacer(Modifier.width(4.dp)); Text(tr("استئناف", "Resume"))
                                 }
                             } else if (running > 0) {
                                 TextButton(onClick = { DownloadManager.pause() }) {
-                                    Icon(Icons.Filled.Pause, null); Spacer(Modifier.width(4.dp)); Text("إيقاف مؤقت")
+                                    Icon(Icons.Filled.Pause, null); Spacer(Modifier.width(4.dp)); Text(tr("إيقاف مؤقت", "Pause"))
                                 }
                             }
-                            if (running + waiting + pausedCount > 0) TextButton(onClick = { DownloadManager.cancelAll() }) { Text("إيقاف الكل") }
-                            if (failed > 0) TextButton(onClick = { DownloadManager.retryFailed() }) { Text("إعادة الفاشل") }
-                            TextButton(onClick = { DownloadManager.clearFinished() }) { Text("مسح المكتمل") }
+                            if (running + waiting + pausedCount > 0) TextButton(onClick = { DownloadManager.cancelAll() }) { Text(tr("إيقاف الكل", "Stop all")) }
+                            if (failed > 0) TextButton(onClick = { DownloadManager.retryFailed() }) { Text(tr("إعادة الفاشل", "Retry failed")) }
+                            TextButton(onClick = { DownloadManager.clearFinished() }) { Text(tr("مسح المكتمل", "Clear finished")) }
                         }
                     }
                 }
@@ -432,8 +432,8 @@ fun MainScreen() {
     diag?.let { report ->
         AlertDialog(
             onDismissRequest = { DownloadManager.diagText.value = null },
-            confirmButton = { TextButton(onClick = { DownloadManager.diagText.value = null }) { Text("إغلاق") } },
-            title = { Text("تقرير الفحص") },
+            confirmButton = { TextButton(onClick = { DownloadManager.diagText.value = null }) { Text(tr("إغلاق", "Close")) } },
+            title = { Text(tr("تقرير الفحص", "Check report")) },
             text = {
                 SelectionContainer {
                     Text(report, modifier = Modifier.verticalScroll(rememberScrollState()), style = MaterialTheme.typography.bodySmall)
@@ -449,39 +449,39 @@ fun MainScreen() {
             confirmButton = {
                 when (val u = upd) {
                     is Updater.State.Available ->
-                        Button(onClick = { Updater.download(ctx) }) { Text("حمّل وثبّت التحديث") }
+                        Button(onClick = { Updater.download(ctx) }) { Text(tr("حمّل وثبّت التحديث", "Download and install update")) }
                     is Updater.State.Ready ->
-                        Button(onClick = { Updater.install(ctx, u.file) }) { Text("ثبّت الحين") }
+                        Button(onClick = { Updater.install(ctx, u.file) }) { Text(tr("ثبّت الحين", "Install now")) }
                     is Updater.State.Failed ->
-                        Button(onClick = { Updater.check(ctx) }) { Text("إعادة المحاولة") }
-                    else -> TextButton(onClick = { showUpdate = false; Updater.reset() }) { Text("تم") }
+                        Button(onClick = { Updater.check(ctx) }) { Text(tr("إعادة المحاولة", "Retry")) }
+                    else -> TextButton(onClick = { showUpdate = false; Updater.reset() }) { Text(tr("تم", "Done")) }
                 }
             },
             dismissButton = {
                 if (upd is Updater.State.Available || upd is Updater.State.Ready || upd is Updater.State.Failed)
-                    TextButton(onClick = { showUpdate = false; Updater.reset() }) { Text("لاحقاً") }
+                    TextButton(onClick = { showUpdate = false; Updater.reset() }) { Text(tr("لاحقاً", "Later")) }
             },
-            title = { Text("تحديث التطبيق") },
+            title = { Text(tr("تحديث التطبيق", "Update app")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("النسخة الحالية: ${Updater.currentName(ctx)}", style = MaterialTheme.typography.bodyMedium)
+                    Text(tr("النسخة الحالية: ${Updater.currentName(ctx)}", "Current version: ${Updater.currentName(ctx)}"), style = MaterialTheme.typography.bodyMedium)
                     when (val u = upd) {
                         is Updater.State.Checking, Updater.State.Idle -> {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
-                            Text("جاري البحث عن تحديث...")
+                            Text(tr("جاري البحث عن تحديث...", "Looking for an update..."))
                         }
-                        is Updater.State.UpToDate -> Text("عندك آخر نسخة، ما فيه تحديث جديد ✔")
+                        is Updater.State.UpToDate -> Text(tr("عندك آخر نسخة، ما فيه تحديث جديد ✔", "You have the latest version, no new update ✔"))
                         is Updater.State.Available -> {
-                            Text("يوجد تحديث جديد: ${u.name}", color = MaterialTheme.colorScheme.secondary)
+                            Text(tr("يوجد تحديث جديد: ${u.name}", "New update available: ${u.name}"), color = MaterialTheme.colorScheme.secondary)
                             if (u.notes.isNotBlank()) Text(u.notes, style = MaterialTheme.typography.bodySmall)
-                            Text("بينزل الملف (حوالي 105 ميجا) وبعدها يطلع لك تثبيت أندرويد، اضغط تثبيت وتتحدث النسخة فوق القديمة وتبقى إعداداتك.",
+                            Text(tr("بينزل الملف (حوالي 105 ميجا) وبعدها يطلع لك تثبيت أندرويد، اضغط تثبيت وتتحدث النسخة فوق القديمة وتبقى إعداداتك.", "The file (about 105 MB) will download, then Android shows its install screen. Tap Install and the new version replaces the old one, keeping your settings."),
                                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         is Updater.State.Downloading -> {
                             LinearProgressIndicator(progress = { u.percent / 100f }, modifier = Modifier.fillMaxWidth())
-                            Text("جاري تنزيل ${u.name}... ${u.percent}%")
+                            Text(tr("جاري تنزيل ${u.name}... ${u.percent}%", "Downloading ${u.name}... ${u.percent}%"))
                         }
-                        is Updater.State.Ready -> Text("نزل التحديث ${u.name}. اضغط «ثبّت الحين» (إذا طلب السماح بالتثبيت من هذا التطبيق فعّله وارجع).")
+                        is Updater.State.Ready -> Text(tr("نزل التحديث ${u.name}. اضغط «ثبّت الحين» (إذا طلب السماح بالتثبيت من هذا التطبيق فعّله وارجع).", "Update ${u.name} downloaded. Tap “Install now” (if it asks to allow installs from this app, enable it and come back)."))
                         is Updater.State.Failed -> Text(u.msg, color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -495,33 +495,38 @@ fun MainScreen() {
     if (showSettings) {
         AlertDialog(
             onDismissRequest = { showSettings = false },
-            confirmButton = { TextButton(onClick = { showSettings = false }) { Text("تم") } },
-            title = { Text("الإعدادات") },
+            confirmButton = { TextButton(onClick = { showSettings = false }) { Text(tr("تم", "Done")) } },
+            title = { Text(tr("الإعدادات", "Settings")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("عدد الفيديوهات اللي تتحمل بنفس الوقت:")
+                    Text(tr("اللغة:", "Language:"))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilterChip(selected = !Lang.en, onClick = { Lang.set(ctx, false) }, label = { Text("العربية") })
+                        FilterChip(selected = Lang.en, onClick = { Lang.set(ctx, true) }, label = { Text("English") })
+                    }
+                    Text(tr("عدد الفيديوهات اللي تتحمل بنفس الوقت:", "Number of videos downloading at the same time:"))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf(1, 2, 3, 4, 8, 16).forEach { n ->
                             FilterChip(selected = parallel == n, onClick = { DownloadManager.setParallel(n) }, label = { Text("$n") })
                         }
                     }
-                    Text("رقم كبير يبطّئ النت وممكن الموقع يحظرك.", style = MaterialTheme.typography.bodySmall,
+                    Text(tr("رقم كبير يبطّئ النت وممكن الموقع يحظرك.", "A big number slows the internet and the site may block you."), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(engine, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedButton(onClick = { DownloadManager.updateEngine() }, enabled = !engineBusy) {
                         Icon(Icons.Filled.Refresh, null)
                         Spacer(Modifier.width(6.dp))
-                        Text("تحديث المحرك (إذا موقع وقف يحمّل)")
+                        Text(tr("تحديث المحرك (إذا موقع وقف يحمّل)", "Update engine (if a site stopped downloading)"))
                     }
                     OutlinedButton(onClick = { showSettings = false; showAccounts = true }) {
-                        Text("حسابات المنصات (إنستغرام، فيسبوك، تيك توك، سناب...)")
+                        Text(tr("حسابات المنصات (إنستغرام، فيسبوك، تيك توك، سناب...)", "Platform accounts (Instagram, Facebook, TikTok, Snap...)"))
                     }
                     OutlinedButton(onClick = {
                         showSettings = false
                         DownloadManager.diagnose(DownloadManager.firstUrl(input))
-                    }) { Text("فحص الاتصال (يطلّع تقرير)") }
+                    }) { Text(tr("فحص الاتصال (يطلّع تقرير)", "Connection check (shows a report)")) }
                     Text(
-                        "الملفات تنحفظ في: التنزيلات / Murn",
+                        tr("الملفات تنحفظ في: التنزيلات / Murn", "Files are saved in: Downloads / Murn"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -555,7 +560,7 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
             Column(Modifier.systemBarsPadding().padding(horizontal = 10.dp).padding(top = 8.dp, bottom = 8.dp)) {
                 Text(req.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "محدد ${selected.size} من $total  (الحد الأقصى $max)",
+                    tr("محدد ${selected.size} من $total  (الحد الأقصى $max)", "Selected ${selected.size} of $total  (max $max)"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -566,15 +571,15 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
                         onValueChange = { s -> firstN = s.filter { it.isDigit() }.take(3) },
                         modifier = Modifier.width(96.dp),
                         singleLine = true,
-                        label = { Text("أول") },
+                        label = { Text(tr("أول", "First")) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     )
                     OutlinedButton(onClick = {
                         val n = (firstN.toIntOrNull() ?: 0).coerceIn(0, minOf(total, max))
                         selected.clear(); selected.addAll(0 until n)
-                    }) { Text("تحديد") }
-                    OutlinedButton(onClick = { selected.clear(); selected.addAll(0 until minOf(total, max)) }) { Text("الكل") }
-                    TextButton(onClick = { selected.clear() }) { Text("إلغاء التحديد") }
+                    }) { Text(tr("تحديد", "Select")) }
+                    OutlinedButton(onClick = { selected.clear(); selected.addAll(0 until minOf(total, max)) }) { Text(tr("الكل", "All")) }
+                    TextButton(onClick = { selected.clear() }) { Text(tr("إلغاء التحديد", "Clear selection")) }
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -582,8 +587,8 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
                         onClick = { onConfirm(selected.sorted().map { req.candidates[it] }) },
                         enabled = selected.isNotEmpty(),
                         modifier = Modifier.weight(1f).height(48.dp),
-                    ) { Text("تحميل المحدد (${selected.size})") }
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("إلغاء") }
+                    ) { Text(tr("تحميل المحدد (${selected.size})", "Download selected (${selected.size})")) }
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text(tr("إلغاء", "Cancel")) }
                 }
                 Spacer(Modifier.height(8.dp))
                 LazyVerticalGrid(
@@ -650,9 +655,9 @@ private fun ItemRow(item: Item) {
                 when (item.status) {
                     Status.RESOLVING -> {
                         LinearProgressIndicator(Modifier.fillMaxWidth())
-                        Text(item.info.ifEmpty { "جاري القراءة / البحث..." }, style = MaterialTheme.typography.bodySmall)
+                        Text(item.info.ifEmpty { tr("جاري القراءة / البحث...", "Reading / searching...") }, style = MaterialTheme.typography.bodySmall)
                     }
-                    Status.QUEUED -> Text("بالانتظار", style = MaterialTheme.typography.bodySmall,
+                    Status.QUEUED -> Text(tr("بالانتظار", "Waiting"), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Status.RUNNING -> {
                         LinearProgressIndicator(progress = { item.progress }, modifier = Modifier.fillMaxWidth())
@@ -660,29 +665,29 @@ private fun ItemRow(item: Item) {
                     }
                     Status.PAUSED -> {
                         LinearProgressIndicator(progress = { item.progress }, modifier = Modifier.fillMaxWidth())
-                        Text("⏸ متوقف مؤقتاً (${(item.progress * 100).toInt()}%)", style = MaterialTheme.typography.bodySmall)
+                        Text(tr("⏸ متوقف مؤقتاً (${(item.progress * 100).toInt()}%)", "⏸ Paused (${(item.progress * 100).toInt()}%)"), style = MaterialTheme.typography.bodySmall)
                     }
                     Status.DONE -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(6.dp))
-                        Text(if (item.zip) "تم (يدخل في ملف ZIP)" else "تم التحميل", style = MaterialTheme.typography.bodySmall,
+                        Text(if (item.zip) tr("تم (يدخل في ملف ZIP)", "Done (goes into the ZIP file)") else tr("تم التحميل", "Downloaded"), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary)
                     }
                     Status.FAILED -> Row(verticalAlignment = Alignment.Top) {
                         Icon(Icons.Filled.Error, null, tint = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.width(6.dp))
-                        Text(item.error ?: "فشل", maxLines = 5, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        Text(item.error ?: tr("فشل", "Failed"), maxLines = 5, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
-                    Status.CANCELED -> Text("⏹ متوقف", style = MaterialTheme.typography.bodySmall,
+                    Status.CANCELED -> Text(tr("⏹ متوقف", "⏹ Stopped"), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             when (item.status) {
                 Status.RESOLVING, Status.QUEUED, Status.RUNNING, Status.PAUSED ->
-                    IconButton(onClick = { DownloadManager.cancel(item.id) }) { Icon(Icons.Filled.Close, "إلغاء") }
+                    IconButton(onClick = { DownloadManager.cancel(item.id) }) { Icon(Icons.Filled.Close, tr("إلغاء", "Cancel")) }
                 Status.FAILED, Status.CANCELED ->
-                    IconButton(onClick = { DownloadManager.retry(item.id) }) { Icon(Icons.Filled.Refresh, "إعادة") }
-                Status.DONE -> IconButton(onClick = { DownloadManager.remove(item.id) }) { Icon(Icons.Filled.Close, "إخفاء") }
+                    IconButton(onClick = { DownloadManager.retry(item.id) }) { Icon(Icons.Filled.Refresh, tr("إعادة", "Retry")) }
+                Status.DONE -> IconButton(onClick = { DownloadManager.remove(item.id) }) { Icon(Icons.Filled.Close, tr("إخفاء", "Hide")) }
             }
         }
     }

@@ -3,16 +3,17 @@ package com.murn.downloader
 enum class Status { RESOLVING, QUEUED, RUNNING, PAUSED, DONE, FAILED, CANCELED }
 
 /** What the user wants out of each link. [height] = max video height (null = best available). */
-enum class Quality(val label: String, val audioFormat: String? = null, val height: Int? = null) {
-    BEST("أعلى جودة متاحة"),
-    P4320("8K (4320p)", height = 4320),
-    P2160("4K (2160p)", height = 2160),
-    P1440("2K (1440p)", height = 1440),
-    P1080("1080p", height = 1080),
-    P720("720p", height = 720),
-    P480("480p", height = 480),
-    MP3("صوت فقط (MP3)", audioFormat = "mp3"),
-    M4A("صوت فقط (M4A)", audioFormat = "m4a"),
+enum class Quality(private val ar: String, private val en: String, val audioFormat: String? = null, val height: Int? = null) {
+    BEST("أعلى جودة متاحة", "Best available"),
+    P4320("8K (4320p)", "8K (4320p)", height = 4320),
+    P2160("4K (2160p)", "4K (2160p)", height = 2160),
+    P1440("2K (1440p)", "2K (1440p)", height = 1440),
+    P1080("1080p", "1080p", height = 1080),
+    P720("720p", "720p", height = 720),
+    P480("480p", "480p", height = 480),
+    MP3("صوت فقط (MP3)", "Audio only (MP3)", audioFormat = "mp3"),
+    M4A("صوت فقط (M4A)", "Audio only (M4A)", audioFormat = "m4a"),
+    val label: String get() = tr(ar, en)
 }
 
 /** One video found in a link / page / search, before the user picked it. */

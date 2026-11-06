@@ -60,12 +60,12 @@ object DownloadManager {
 
     val items = MutableStateFlow<List<Item>>(emptyList())
     val pickers = MutableStateFlow<List<PickerRequest>>(emptyList())
-    val engineStatus = MutableStateFlow("جاري تجهيز المحرك (أول مرة ياخذ شوي)...")
+    val engineStatus = MutableStateFlow(tr("جاري تجهيز المحرك (أول مرة ياخذ شوي)...", "Preparing the engine (first time takes a moment)..."))
     val engineBusy = MutableStateFlow(true)
     val parallel = MutableStateFlow(3)
     val quality = MutableStateFlow(Quality.P1080)
     val paused = MutableStateFlow(false)
-    /** report of the "فحص الاتصال" button (null = no report to show) */
+    /** report of the tr("فحص الاتصال", "Connection check") button (null = no report to show) */
     val diagText = MutableStateFlow<String?>(null)
 
     // ------------------------------------------------------------------ setup
@@ -84,17 +84,17 @@ object DownloadManager {
             try {
                 YoutubeDL.getInstance().init(app)
                 FFmpeg.getInstance().init(app)
-                engineStatus.value = "جاري التأكد من آخر تحديث للمحرك..."
+                engineStatus.value = tr("جاري التأكد من آخر تحديث للمحرك...", "Checking for the latest engine update...")
                 // sites change all the time, so refresh yt-dlp on every start (but never wait more than 30s for it)
                 val upd = async { runCatching { YoutubeDL.getInstance().updateYoutubeDL(app, YoutubeDL.UpdateChannel._NIGHTLY) } }
                 withTimeoutOrNull(30_000) { upd.await() }
                 ready.complete(true)
                 engineBusy.value = false
-                engineStatus.value = "المحرك جاهز · ${engineVersion()}"
+                engineStatus.value = tr("المحرك جاهز · ${engineVersion()}", "Engine ready · ${engineVersion()}")
             } catch (t: Throwable) {
                 ready.complete(false)
                 engineBusy.value = false
-                engineStatus.value = "تعذر تجهيز المحرك: ${t.message ?: t.javaClass.simpleName}"
+                engineStatus.value = tr("تعذر تجهيز المحرك: ${t.message ?: t.javaClass.simpleName}", "Could not prepare the engine: ${t.message ?: t.javaClass.simpleName}")
             }
         }
     }
@@ -107,19 +107,19 @@ object DownloadManager {
     /** Manual "update yt-dlp" button (the fix when a site stops working). */
     fun updateEngine() {
         if (engineBusy.value || items.value.any { it.status == Status.RUNNING }) {
-            engineStatus.value = "ما ينفع التحديث وفي تحميل شغال، انتظر يخلص"
+            engineStatus.value = tr("ما ينفع التحديث وفي تحميل شغال، انتظر يخلص", "Can't update while a download is running, wait for it to finish")
             return
         }
         engineBusy.value = true
-        engineStatus.value = "جاري تحديث المحرك..."
+        engineStatus.value = tr("جاري تحديث المحرك...", "Updating the engine...")
         scope.launch {
             val msg = try {
                 when (YoutubeDL.getInstance().updateYoutubeDL(app, YoutubeDL.UpdateChannel._NIGHTLY)) {
-                    YoutubeDL.UpdateStatus.DONE -> "تم تحديث المحرك"
-                    else -> "المحرك على آخر نسخة"
+                    YoutubeDL.UpdateStatus.DONE -> tr("تم تحديث المحرك", "Engine updated")
+                    else -> tr("المحرك على آخر نسخة", "Engine is already up to date")
                 }
             } catch (t: Throwable) {
-                "فشل التحديث: ${t.message ?: "تأكد من الإنترنت"}"
+                tr("فشل التحديث: ${t.message ?: "تأكد من الإنترنت"}", "Update failed: ${t.message ?: "check your internet"}")
             }
             engineBusy.value = false
             engineStatus.value = "$msg · ${engineVersion()}"
@@ -162,9 +162,9 @@ object DownloadManager {
     fun search(query: String, siteUrl: String?, q: Quality, limit: Int, pick: Boolean, zip: Boolean) {
         val batch = newId()
         val id = newId()
-        val where = if (siteUrl == null) "يوتيوب" else runCatching { java.net.URL(siteUrl).host }.getOrDefault(siteUrl)
-        items.update { it + Item(id, siteUrl ?: "", title = "بحث: $query ($where)", status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
-        jobs[id] = scope.launch { resolveSearch(id, query, siteUrl, q, limit, pick, zip, batch, "نتائج «$query» في $where") }
+        val where = if (siteUrl == null) tr("يوتيوب", "YouTube") else runCatching { java.net.URL(siteUrl).host }.getOrDefault(siteUrl)
+        items.update { it + Item(id, siteUrl ?: "", title = tr("بحث: $query ($where)", "Search: $query ($where)"), status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
+        jobs[id] = scope.launch { resolveSearch(id, query, siteUrl, q, limit, pick, zip, batch, tr("نتائج «$query» في $where", "Results for “$query” in $where")) }
         DownloadService.start(app)
     }
 
@@ -231,11 +231,11 @@ object DownloadManager {
 
     /** One tap that tells what works: internet, YouTube, the given site, the engine, the page scan. */
     fun diagnose(siteUrl: String?) {
-        diagText.value = "جاري الفحص... (ياخذ نص دقيقة)"
+        diagText.value = tr("جاري الفحص... (ياخذ نص دقيقة)", "Checking... (takes about half a minute)")
         scope.launch {
             val sb = StringBuilder()
-            sb.appendLine("النسخة 1.0.5 · أندرويد ${Build.VERSION.RELEASE}")
-            sb.appendLine("المحرك: ${engineStatus.value}")
+            sb.appendLine(tr("النسخة ${Updater.currentName(app)} · أندرويد ${Build.VERSION.RELEASE}", "Version ${Updater.currentName(app)} · Android ${Build.VERSION.RELEASE}"))
+            sb.appendLine(tr("المحرك: ${engineStatus.value}", "Engine: ${engineStatus.value}"))
             fun probe(label: String, url: String) {
                 val r = try {
                     val c = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
@@ -246,36 +246,36 @@ object DownloadManager {
                     c.disconnect()
                     "HTTP $code"
                 } catch (t: Throwable) {
-                    "فشل: ${t.javaClass.simpleName} ${t.message.orEmpty().take(80)}"
+                    tr("فشل: ${t.javaClass.simpleName} ${t.message.orEmpty().take(80)}", "Failed: ${t.javaClass.simpleName} ${t.message.orEmpty().take(80)}")
                 }
                 sb.appendLine("$label: $r")
             }
-            probe("1) الإنترنت (google)", "https://www.google.com/generate_204")
-            probe("2) موقع يوتيوب", "https://www.youtube.com/")
-            if (siteUrl != null) probe("3) الموقع اللي في الخانة", siteUrl)
+            probe(tr("1) الإنترنت (google)", "1) Internet (google)"), "https://www.google.com/generate_204")
+            probe(tr("2) موقع يوتيوب", "2) YouTube site"), "https://www.youtube.com/")
+            if (siteUrl != null) probe(tr("3) الموقع اللي في الخانة", "3) The site in the box"), siteUrl)
 
             val engineOk = try { ready.await() } catch (_: Throwable) { false }
             if (!engineOk) {
-                sb.appendLine("4) المحرك: ما اشتغل أصلاً")
+                sb.appendLine(tr("4) المحرك: ما اشتغل أصلاً", "4) Engine: did not start at all"))
             } else {
                 try {
                     val l = ytList("diag", "ytsearch2:test", null)
-                    sb.appendLine("4) بحث يوتيوب بالمحرك: نجح (${l.size} نتيجة)")
+                    sb.appendLine(tr("4) بحث يوتيوب بالمحرك: نجح (${l.size} نتيجة)", "4) YouTube search with the engine: OK (${l.size} results)"))
                 } catch (t: Throwable) {
-                    sb.appendLine("4) بحث يوتيوب بالمحرك: فشل\n   ${friendlyError(t).replace("\n", "\n   ")}")
+                    sb.appendLine(tr("4) بحث يوتيوب بالمحرك: فشل", "4) YouTube search with the engine: failed") + "\n   ${friendlyError(t).replace("\n", "\n   ")}")
                 }
                 if (siteUrl != null) {
                     try {
                         val l = ytList("diag", siteUrl, 5)
-                        sb.appendLine("5) قراءة الموقع بالمحرك: نجح (${l.size} مقطع)")
+                        sb.appendLine(tr("5) قراءة الموقع بالمحرك: نجح (${l.size} مقطع)", "5) Reading the site with the engine: OK (${l.size} videos)"))
                     } catch (t: Throwable) {
-                        sb.appendLine("5) قراءة الموقع بالمحرك: فشل\n   ${friendlyError(t).replace("\n", "\n   ")}")
+                        sb.appendLine(tr("5) قراءة الموقع بالمحرك: فشل", "5) Reading the site with the engine: failed") + "\n   ${friendlyError(t).replace("\n", "\n   ")}")
                     }
                     try {
                         val l = PageScan.scan(siteUrl)
-                        sb.appendLine("6) فحص الصفحة: لقى ${l.size} مقطع")
+                        sb.appendLine(tr("6) فحص الصفحة: لقى ${l.size} مقطع", "6) Page scan: found ${l.size} videos"))
                     } catch (t: Throwable) {
-                        sb.appendLine("6) فحص الصفحة: فشل ${t.javaClass.simpleName} ${t.message.orEmpty().take(100)}")
+                        sb.appendLine(tr("6) فحص الصفحة: فشل ${t.javaClass.simpleName} ${t.message.orEmpty().take(100)}", "6) Page scan: failed ${t.javaClass.simpleName} ${t.message.orEmpty().take(100)}"))
                     }
                 }
             }
@@ -310,7 +310,7 @@ object DownloadManager {
             }
             return
         }
-        val title = str(o, "title") ?: str(o, "id") ?: "فيديو"
+        val title = str(o, "title") ?: str(o, "id") ?: tr("فيديو", "Video")
         if (title == "[Private video]" || title == "[Deleted video]") return
         var link = listOf("webpage_url", "url", "original_url").mapNotNull { str(o, it) }.firstOrNull { it.startsWith("http") }
         if (link == null) {
@@ -341,7 +341,7 @@ object DownloadManager {
             ck.parentFile?.deleteRecursively()
         }
         val start = out.indexOf('{')
-        if (start < 0) error("ما قدرت أقرأ الرابط")
+        if (start < 0) error(tr("ما قدرت أقرأ الرابط", "Couldn't read the link"))
         val found = ArrayList<Candidate>()
         collect(JSONObject(out.substring(start)), found, null)
         return found
@@ -355,7 +355,7 @@ object DownloadManager {
         var problem: Throwable? = null
         resolveGate.withPermit {
             try {
-                if (!ready.await()) error("المحرك غير جاهز")
+                if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
                 if (phId in canceled) throw InterruptedException()
                 try {
                     cands = ytList(phId, url, limit)
@@ -368,11 +368,11 @@ object DownloadManager {
                     var scanned: List<Candidate> = emptyList()
                     var scanErr: Throwable? = null
                     if (big.none { host.contains(it) }) {
-                        update(phId) { copy(info = "جاري فحص الصفحة...") }
+                        update(phId) { copy(info = tr("جاري فحص الصفحة...", "Scanning the page...")) }
                         try { scanned = PageScan.scan(url) } catch (e: Throwable) { scanErr = e }
                     }
                     if (scanned.isNotEmpty()) cands = scanned
-                    else if (scanErr != null) throw PageProblem("تعذر فتح الصفحة: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}")
+                    else if (scanErr != null) throw PageProblem(tr("تعذر فتح الصفحة: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}", "Could not open the page: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}"))
                     else throw t
                 }
             } catch (t: Throwable) {
@@ -385,7 +385,7 @@ object DownloadManager {
         val found = cands
         when {
             wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
-            found != null -> deliver(phId, "الروابط", found, q, limit, pick, zip, batch)
+            found != null -> deliver(phId, tr("الروابط", "Links"), found, q, limit, pick, zip, batch)
             problem is PageProblem ->
                 update(phId) { copy(status = Status.FAILED, error = problem?.message) }
             else -> {
@@ -404,7 +404,7 @@ object DownloadManager {
         var problem: Throwable? = null
         resolveGate.withPermit {
             try {
-                if (!ready.await()) error("المحرك غير جاهز")
+                if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
                 if (phId in canceled) throw InterruptedException()
                 cands = if (siteUrl == null) {
                     ytList(phId, "ytsearch$limit:$query", null)
@@ -429,7 +429,7 @@ object DownloadManager {
     private fun deliver(phId: String, label: String, cands: List<Candidate>, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
         val list = cands.distinctBy { it.url }.take(MAX_LIST)
         when {
-            list.isEmpty() -> update(phId) { copy(status = Status.FAILED, error = "ما لقيت فيديوهات") }
+            list.isEmpty() -> update(phId) { copy(status = Status.FAILED, error = tr("ما لقيت فيديوهات", "No videos found")) }
             list.size == 1 || !pick -> enqueue(phId, list.take(limit), q, zip, batch)
             else -> {
                 items.update { l -> l.filterNot { it.id == phId } }
@@ -457,7 +457,7 @@ object DownloadManager {
             for (item in items.value) {
                 if (slots <= 0) break
                 if (item.status != Status.QUEUED) continue
-                update(item.id) { copy(status = Status.RUNNING, progress = 0f, info = "جاري البدء...", error = null) }
+                update(item.id) { copy(status = Status.RUNNING, progress = 0f, info = tr("جاري البدء...", "Starting..."), error = null) }
                 jobs[item.id] = scope.launch { runDownload(item.id) }
                 slots--
             }
@@ -469,7 +469,7 @@ object DownloadManager {
         val tmp = File(baseDir(), "tmp/$id").apply { mkdirs() }
         var keepTmp = false
         try {
-            if (!ready.await()) error("المحرك غير جاهز")
+            if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
             if (id in canceled) throw InterruptedException()
 
             try {
@@ -487,7 +487,7 @@ object DownloadManager {
                     } catch (t2: Throwable) {
                         if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
                         if (t2 is PageProblem) throw t2
-                        throw PageProblem("تيك توك: ${t2.message ?: t2.javaClass.simpleName}\n${friendlyError(t)}")
+                        throw PageProblem(tr("تيك توك: ${t2.message ?: t2.javaClass.simpleName}\n${friendlyError(t)}", "TikTok: ${t2.message ?: t2.javaClass.simpleName}\n${friendlyError(t)}"))
                     }
                     if (done) return
                 } else {
@@ -497,27 +497,27 @@ object DownloadManager {
                 if (!blocked || isBigHost(hostOf(item.url))) throw t
                 // the site refuses yt-dlp's requests: read the page like a browser would, find the video file in it,
                 // and hand that direct link to yt-dlp (with the page as referer)
-                update(id) { copy(info = "جاري المحاولة بطريقة المتصفح...", progress = 0f) }
+                update(id) { copy(info = tr("جاري المحاولة بطريقة المتصفح...", "Trying browser mode..."), progress = 0f) }
                 var media: String? = runCatching { MediaFind.find(item.url, item.quality) }.getOrNull()
                 if (media == null) {
                     // the video is built by JavaScript: open the page in the in-app browser and catch the stream
-                    update(id) { copy(info = "جاري فتح الصفحة بالمتصفح الداخلي والتقاط الفيديو...", progress = 0f) }
+                    update(id) { copy(info = tr("جاري فتح الصفحة بالمتصفح الداخلي والتقاط الفيديو...", "Opening the page in the in-app browser to catch the video..."), progress = 0f) }
                     media = try { WebSniff.find(app, item.url) } catch (e: Throwable) { null }
                 }
                 if (id in canceled || id in pausedIds) throw InterruptedException()
                 if (media == null) throw PageProblem(
-                    "${friendlyError(t)}\n(جرّبت قراءة الصفحة والمتصفح الداخلي وما لقيت رابط فيديو. ممكن الفيديو محمي أو يحتاج تسجيل دخول)")
+                    tr("${friendlyError(t)}\n(جرّبت قراءة الصفحة والمتصفح الداخلي وما لقيت رابط فيديو. ممكن الفيديو محمي أو يحتاج تسجيل دخول)", "${friendlyError(t)}\n(I tried reading the page and the in-app browser but found no video link. The video may be protected or need a login)"))
                 try {
                     runYtdlp(id, buildRequest(item, tmp, media, item.url))
                 } catch (t2: Throwable) {
                     if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
-                    throw PageProblem("المحاولة الأولى: ${friendlyError(t)}\n\nبطريقة المتصفح: ${friendlyError(t2)}")
+                    throw PageProblem(tr("المحاولة الأولى: ${friendlyError(t)}\n\nبطريقة المتصفح: ${friendlyError(t2)}", "First attempt: ${friendlyError(t)}\n\nBrowser mode: ${friendlyError(t2)}"))
                 }
                 }
             }
             if (id in canceled || id in pausedIds) throw InterruptedException()
 
-            val file = pickMediaFile(tmp) ?: error("خلص التحميل بس ما لقيت الملف")
+            val file = pickMediaFile(tmp) ?: error(tr("خلص التحميل بس ما لقيت الملف", "Download finished but the file was not found"))
             if (item.zip) {
                 val stage = File(baseDir(), "zip/${item.batch}").apply { mkdirs() }
                 var dst = File(stage, file.name)
@@ -525,7 +525,7 @@ object DownloadManager {
                 while (dst.exists()) { dst = File(stage, "${file.nameWithoutExtension} ($n).${file.extension}"); n++ }
                 file.copyTo(dst)
             } else {
-                update(id) { copy(info = "جاري الحفظ في التنزيلات...", progress = 1f) }
+                update(id) { copy(info = tr("جاري الحفظ في التنزيلات...", "Saving to Downloads..."), progress = 1f) }
                 saveToDownloads(file.name, mimeFor(file.name)) { out -> file.inputStream().use { it.copyTo(out) } }
             }
             update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = file.name) }
@@ -535,7 +535,7 @@ object DownloadManager {
             when {
                 userPaused -> {
                     keepTmp = true // .part files stay, so resume continues where it stopped
-                    update(id) { copy(status = Status.PAUSED, info = "متوقف مؤقتاً") }
+                    update(id) { copy(status = Status.PAUSED, info = tr("متوقف مؤقتاً", "Paused")) }
                 }
                 userCanceled || t is InterruptedException || t is YoutubeDL.CanceledException ->
                     update(id) { copy(status = Status.CANCELED, info = "") }
@@ -556,13 +556,13 @@ object DownloadManager {
      * false = a video file is now in [tmp] and the normal save step continues.
      */
     private suspend fun tiktokViaBrowser(id: String, item: Item, tmp: File, pageUrl: String): Boolean {
-        update(id) { copy(info = "جاري فتح تيك توك بالمتصفح الداخلي...", progress = 0f) }
+        update(id) { copy(info = tr("جاري فتح تيك توك بالمتصفح الداخلي...", "Opening TikTok in the in-app browser..."), progress = 0f) }
         val json = WebSniff.pageData(app, pageUrl, "__UNIVERSAL_DATA_FOR_REHYDRATION__")
-            ?: throw PageProblem("تيك توك ما رضي يفتح الصفحة (حماية ضد البرامج). جرّب تسجل دخولك من الإعدادات ← حسابات المنصات، أو غيّر الشبكة / شغّل VPN، وأعد المحاولة")
+            ?: throw PageProblem(tr("تيك توك ما رضي يفتح الصفحة (حماية ضد البرامج). جرّب تسجل دخولك من الإعدادات ← حسابات المنصات، أو غيّر الشبكة / شغّل VPN، وأعد المحاولة", "TikTok refused to open the page (anti-bot protection). Try signing in from Settings → Platform accounts, or change the network / use a VPN, then retry"))
         if (id in canceled || id in pausedIds) throw InterruptedException()
         val post = SocialFix.parseTikTok(json)
-        if (!post.found) throw PageProblem("المنشور غير متاح (محذوف أو خاص أو محجوب في بلدك)")
-        val postTitle = post.title.ifBlank { "تيك توك" }
+        if (!post.found) throw PageProblem(tr("المنشور غير متاح (محذوف أو خاص أو محجوب في بلدك)", "The post is unavailable (deleted, private or blocked in your country)"))
+        val postTitle = post.title.ifBlank { tr("تيك توك", "TikTok") }
         update(id) { copy(title = postTitle.take(120)) }
 
         if (post.photos.isNotEmpty()) {
@@ -570,7 +570,7 @@ object DownloadManager {
             val files = ArrayList<File>()
             post.photos.forEachIndexed { i, u ->
                 if (id in canceled || id in pausedIds) throw InterruptedException()
-                update(id) { copy(progress = i / post.photos.size.toFloat(), info = "صورة ${i + 1} من ${post.photos.size}") }
+                update(id) { copy(progress = i / post.photos.size.toFloat(), info = tr("صورة ${i + 1} من ${post.photos.size}", "Picture ${i + 1} of ${post.photos.size}")) }
                 files += SocialFix.download(u, tmp, "TikTok_${postId}_${i + 1}")
             }
             for (f in files) {
@@ -582,16 +582,16 @@ object DownloadManager {
                     saveToDownloads(f.name, mime) { out -> f.inputStream().use { it.copyTo(out) } }
                 }
             }
-            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = "${files.size} صورة") }
+            update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = tr("${files.size} صورة", "${files.size} pictures")) }
             return true
         }
 
-        val video = post.videoUrl ?: throw PageProblem("لقيت المنشور بس ما لقيت رابط الفيديو فيه")
+        val video = post.videoUrl ?: throw PageProblem(tr("لقيت المنشور بس ما لقيت رابط الفيديو فيه", "Found the post but no video link in it"))
         val dest = File(tmp, safeName(postTitle) + ".mp4")
         SocialFix.downloadTo(
             video, dest, "https://www.tiktok.com/", WebSniff.cookiesFor(video),
             cancelled = { id in canceled || id in pausedIds },
-        ) { p -> update(id) { copy(progress = p, info = "جاري التحميل...") } }
+        ) { p -> update(id) { copy(progress = p, info = tr("جاري التحميل...", "Downloading...")) } }
         return false
     }
 
@@ -611,14 +611,14 @@ object DownloadManager {
             if (now - last < 400 && p < 100f) return@execute
             last = now
             val speed = SPEED_RE.find(line)?.groupValues?.get(1)
-            val etaText = if (eta > 0) "متبقي ${fmtEta(eta)}" else null
+            val etaText = if (eta > 0) tr("متبقي ${fmtEta(eta)}", "${fmtEta(eta)} left") else null
             val processing = p < 0 && (line.startsWith("[Merger]") || line.startsWith("[ExtractAudio]") ||
                     line.startsWith("[VideoConvertor]") || line.startsWith("[Fixup"))
             update(id) {
                 copy(
                     progress = if (p >= 0) p / 100f else progress,
                     info = when {
-                        processing -> "جاري الدمج / التحويل..."
+                        processing -> tr("جاري الدمج / التحويل...", "Merging / converting...")
                         speed != null || etaText != null -> listOfNotNull(speed, etaText).joinToString(" · ")
                         else -> info
                     },
@@ -697,7 +697,7 @@ object DownloadManager {
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
             val resolver = app.contentResolver
-            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("ما قدرت أحفظ الملف")
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error(tr("ما قدرت أحفظ الملف", "Couldn't save the file"))
             try {
                 resolver.openOutputStream(uri)!!.use(write)
                 val done = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
@@ -775,27 +775,27 @@ object DownloadManager {
         val raw = line.replace(Regex("\\s+"), " ").take(220)
         val friendly: String? = when {
             line.contains("Sign in to confirm", true) || line.contains("not a bot", true) ->
-                "يوتيوب طلب تأكيد إنك مو روبوت. جرّب تحديث المحرك من الإعدادات أو غيّر الشبكة"
+                tr("يوتيوب طلب تأكيد إنك مو روبوت. جرّب تحديث المحرك من الإعدادات أو غيّر الشبكة", "YouTube asked to confirm you are not a robot. Try updating the engine in Settings or change the network")
             line.contains("login required", true) || line.contains("requires authentication", true) ||
                     line.contains("cookies", true) || line.contains("rate-limit", true) ||
                     (line.contains("log in", true) && !line.contains("age", true)) ->
-                "المنصة تطلب تسجيل دخول. من الإعدادات ← «حسابات المنصات» سجّل دخولك وأعد المحاولة"
-            line.contains("Private video", true) -> "الفيديو خاص"
-            line.contains("Video unavailable", true) -> "الفيديو غير متاح (محذوف أو محجوب)"
-            line.contains("451") -> "الموقع محجوب قانونياً في بلدك (451). جرّب VPN"
+                tr("المنصة تطلب تسجيل دخول. من الإعدادات ← «حسابات المنصات» سجّل دخولك وأعد المحاولة", "The platform requires a login. In Settings → “Platform accounts” sign in and retry")
+            line.contains("Private video", true) -> tr("الفيديو خاص", "The video is private")
+            line.contains("Video unavailable", true) -> tr("الفيديو غير متاح (محذوف أو محجوب)", "The video is unavailable (deleted or blocked)")
+            line.contains("451") -> tr("الموقع محجوب قانونياً في بلدك (451). جرّب VPN", "The site is legally blocked in your country (451). Try a VPN")
             line.contains("HTTP Error 403", true) || line.contains("403: Forbidden", true) ->
-                "الموقع رفض الطلب (403). ممكن يحمي مقاطعه أو يحتاج VPN"
-            line.contains("HTTP Error 404", true) -> "الصفحة غير موجودة (404)"
-            line.contains("Sign in", true) && line.contains("age", true) -> "المقطع يحتاج تسجيل دخول (عمر)"
-            line.contains("Unsupported URL", true) -> "الرابط هذا غير مدعوم عند المحرك"
+                tr("الموقع رفض الطلب (403). ممكن يحمي مقاطعه أو يحتاج VPN", "The site refused the request (403). It may protect its videos or need a VPN")
+            line.contains("HTTP Error 404", true) -> tr("الصفحة غير موجودة (404)", "Page not found (404)")
+            line.contains("Sign in", true) && line.contains("age", true) -> tr("المقطع يحتاج تسجيل دخول (عمر)", "The video needs a login (age restriction)")
+            line.contains("Unsupported URL", true) -> tr("الرابط هذا غير مدعوم عند المحرك", "This link is not supported by the engine")
             line.contains("Unable to download", true) || line.contains("timed out", true) ||
                     line.contains("resolve", true) || line.contains("UnknownHost", true) ||
-                    line.contains("Connection", true) -> "مشكلة بالاتصال بالإنترنت"
-            line.contains("No space", true) -> "ما في مساحة كافية بالجوال"
+                    line.contains("Connection", true) -> tr("مشكلة بالاتصال بالإنترنت", "Internet connection problem")
+            line.contains("No space", true) -> tr("ما في مساحة كافية بالجوال", "Not enough storage on the phone")
             else -> null
         }
         return when {
-            raw.isBlank() -> friendly ?: "فشل"
+            raw.isBlank() -> friendly ?: tr("فشل", "Failed")
             friendly == null -> raw
             else -> "$friendly\n$raw"
         }

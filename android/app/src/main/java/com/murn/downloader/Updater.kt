@@ -76,7 +76,7 @@ object Updater {
                     if (code > currentCode(app)) State.Available(name, code, j.optString("notes", ""))
                     else if (silent) State.Idle else State.UpToDate
             } catch (e: Exception) {
-                _state.value = if (silent) State.Idle else State.Failed("ما قدرت أفحص التحديث: ${e.message ?: e.javaClass.simpleName}")
+                _state.value = if (silent) State.Idle else State.Failed(tr("ما قدرت أفحص التحديث: ${e.message ?: e.javaClass.simpleName}", "Could not check for updates: ${e.message ?: e.javaClass.simpleName}"))
             }
         }
     }
@@ -110,12 +110,12 @@ object Updater {
                             }
                         }
                     }
-                    if (total > 0 && got != total) error("الملف ناقص ($got من $total)")
+                    if (total > 0 && got != total) error(tr("الملف ناقص ($got من $total)", "The file is incomplete ($got of $total)"))
                 } finally { c.disconnect() }
                 _state.value = State.Ready(out, s.name)
                 install(app, out)
             } catch (e: Exception) {
-                _state.value = State.Failed("فشل تنزيل التحديث: ${e.message ?: e.javaClass.simpleName}")
+                _state.value = State.Failed(tr("فشل تنزيل التحديث: ${e.message ?: e.javaClass.simpleName}", "Update download failed: ${e.message ?: e.javaClass.simpleName}"))
             }
         }
     }
