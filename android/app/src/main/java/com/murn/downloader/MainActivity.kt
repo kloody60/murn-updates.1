@@ -280,14 +280,14 @@ fun MainScreen() {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showUpdate = true; if (!Updater.hasUpdate) Updater.check(ctx) }) {
+                    IconButton(onClick = { showSettings = true }) {
+                        // a dot on the gear tells that an update is waiting inside Settings
                         if (Updater.hasUpdate) {
-                            BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.SystemUpdate, tr("تحديث التطبيق", "Update app"), tint = MaterialTheme.colorScheme.secondary) }
+                            BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Settings, tr("الإعدادات", "Settings")) }
                         } else {
-                            Icon(Icons.Filled.SystemUpdate, tr("تحديث التطبيق", "Update app"))
+                            Icon(Icons.Filled.Settings, tr("الإعدادات", "Settings"))
                         }
                     }
-                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Filled.Settings, tr("الإعدادات", "Settings")) }
                 },
             )
         },
@@ -506,6 +506,15 @@ fun MainScreen() {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         FilterChip(selected = !Lang.en, onClick = { Lang.set(ctx, false) }, label = { Text("العربية") })
                         FilterChip(selected = Lang.en, onClick = { Lang.set(ctx, true) }, label = { Text("English") })
+                    }
+                    OutlinedButton(onClick = {
+                        showSettings = false
+                        showUpdate = true
+                        if (!Updater.hasUpdate) Updater.check(ctx)
+                    }) {
+                        Icon(Icons.Filled.SystemUpdate, null)
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (Updater.hasUpdate) tr("تحديث التطبيق (يوجد تحديث جديد!)", "Update app (new version available!)") else tr("تحديث التطبيق", "Update app"))
                     }
                     Text(tr("عدد الفيديوهات اللي تتحمل بنفس الوقت:", "Number of videos downloading at the same time:"))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
