@@ -74,22 +74,29 @@ object MediaFind {
             h.url.startsWith("http") && NOT_VIDEO.none { h.url.substringBefore('?').trimEnd('/').endsWith(it, true) }
         }
         hits.sortBy { it.start }
+        // quality of each link: from its file name, else from the label written next to it. Pages put the label either
+        // after the link (video_url: 'u', video_url_text: '240p') or before it ({"720p": "u"}); read both ways and keep the
+        // way that labels more links (a wrong way would give every link the label of its neighbour).
+        val nameH = hits.map { heightIn(it.url.substringBefore('?')) }
+        val fwdH = hits.mapIndexed { i, h ->
+            val limit = hits.getOrNull(i + 1)?.start ?: html.length
+            var seg = html.substring(minOf(h.end, html.length), minOf(h.end + 220, limit, html.length))
+            seg.indexOfAny(charArrayOf('}', '>')).let { if (it >= 0) seg = seg.substring(0, it) }
+            heightIn(seg)
+        }
+        val bwdH = hits.mapIndexed { i, h ->
+            val from = maxOf(hits.getOrNull(i - 1)?.end ?: 0, h.start - 220, 0)
+            var seg = html.substring(from, minOf(h.start, html.length))
+            seg.lastIndexOfAny(charArrayOf('{', '<')).let { if (it >= 0) seg = seg.substring(it) }
+            heightIn(seg)
+        }
+        val fwdCount = hits.indices.count { nameH[it] == null && fwdH[it] != null }
+        val bwdCount = hits.indices.count { nameH[it] == null && bwdH[it] != null }
+        val useBack = bwdCount > fwdCount
         for ((i, h) in hits.withIndex()) {
-            // 1) the quality is in the file name  2) a label right after the link  3) a label right before it
-            var q = heightIn(h.url.substringBefore('?'))
-            if (q == null) {
-                val limit = hits.getOrNull(i + 1)?.start ?: html.length
-                var fwd = html.substring(minOf(h.end, html.length), minOf(h.end + 220, limit, html.length))
-                fwd.indexOfAny(charArrayOf('}', '>')).let { if (it >= 0) fwd = fwd.substring(0, it) }
-                q = heightIn(fwd)
-            }
-            if (q == null) {
-                val from = maxOf(hits.getOrNull(i - 1)?.end ?: 0, h.start - 220, 0)
-                var back = html.substring(from, minOf(h.start, html.length))
-                back.lastIndexOfAny(charArrayOf('{', '<')).let { if (it >= 0) back = back.substring(it) }
-                q = heightIn(back)
-            }
-            h.height = q
+            val side = if (useBack) bwdH[i] else fwdH[i]
+            val other = if (hits.size == 1) (if (useBack) fwdH[i] else bwdH[i]) else null
+            h.height = nameH[i] ?: side ?: other
         }
         return hits
     }
