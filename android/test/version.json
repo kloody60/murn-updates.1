@@ -1,11 +1,11 @@
 {
-  "versionCode": 132,
-  "versionName": "1.1.0.32",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-32/Murn-debug.apk",
-  "sha256": "2f32f26498c5d2fcec3a73486aedabb003c75653759833d9e48b3872eb467b1a",
-  "sizeBytes": 118898015,
+  "versionCode": 134,
+  "versionName": "1.1.0.34",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-34/Murn-debug.apk",
+  "sha256": "01d0d29530e928c86a34fe223a10aeefde60c560d820123d90a0c08d947c2688",
+  "sizeBytes": 118923611,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Resolver: measure the real resolution and duration of every captured URL, keep only the main clip, pick by real resolution; strict mode = never below 400p",
-  "notes_en": "Resolver: measure the real resolution and duration of every captured URL, keep only the main clip, pick by real resolution; strict mode = never below 400p"
+  "notes": "Highest quality by default; download the captured HD URL directly with the browser identity, try ranked alternatives, never silently fall back to the 240p page version",
+  "notes_en": "Highest quality by default; download the captured HD URL directly with the browser identity, try ranked alternatives, never silently fall back to the 240p page version"
 }
