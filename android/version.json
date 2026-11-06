@@ -1,11 +1,11 @@
 {
-  "versionCode": 3,
-  "versionName": "1.0.2",
-  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.2/MurnVideo-1.0.2.apk",
-  "sha256": "f5ebc9cec9fbb5cfd981a262778920f8f4684a79ae08d3e725d72ee2a52d59b1",
-  "sizeBytes": 46397871,
+  "versionCode": 4,
+  "versionName": "1.0.3",
+  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.3/MurnVideo-1.0.3.apk",
+  "sha256": "429572fa33373d488f6b2a069548f97e34069b57c8ca099f3069cb53ec54cfd7",
+  "sizeBytes": 46397895,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "خيار اللغة (العربية / English) في الإعدادات، وشاشة تعرض سبب أي خطأ لتسهيل الإصلاح.",
-  "notes_en": "Language option (Arabic / English) in Settings, and an error screen that shows the cause of any problem."
+  "notes": "إصلاح انهيار شاشة التعديل: المعاينة المحسّنة صارت اختيارية (تجريبية) ولا تعمل إلا عند اختيارها، وحماية إضافية عند تغيير صيغة الفيديو.",
+  "notes_en": "Fix for the editor crash: the enhanced preview is now optional (beta) and only runs when selected, plus extra protection when changing the video format."
 }
