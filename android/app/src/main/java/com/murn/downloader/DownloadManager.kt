@@ -163,7 +163,7 @@ object DownloadManager {
         val batch = newId()
         val id = newId()
         val where = if (siteUrl == null) tr("يوتيوب", "YouTube") else runCatching { java.net.URL(siteUrl).host }.getOrDefault(siteUrl)
-        items.update { it + Item(id, siteUrl ?: "", title = tr("بحث: $query ($where)", "Search: $query ($where)"), status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
+        items.update { it + Item(id, siteUrl ?: "", title = splitTerms(query).joinToString("، ").let { tt -> tr("بحث: $tt ($where)", "Search: $tt ($where)") }, status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
         jobs[id] = scope.launch { resolveSearch(id, query, siteUrl, q, limit, pick, zip, batch, tr("نتائج «$query» في $where", "Results for “$query” in $where")) }
         DownloadService.start(app)
     }
@@ -288,11 +288,111 @@ object DownloadManager {
     fun confirmPicker(id: String, chosen: List<Candidate>) {
         val req = pickers.value.firstOrNull { it.id == id } ?: return
         pickers.update { list -> list.filterNot { it.id == id } }
+        pstates.remove(id)
         if (chosen.isNotEmpty()) enqueue(null, chosen.take(req.limit), req.quality, req.zip, req.batch)
         else maybeZip(req.batch)
     }
 
     fun dismissPicker(id: String) = confirmPicker(id, emptyList())
+
+    // ---- "load more" / "refresh" inside the picker
+
+    private enum class SK { YT_LIST, YT_SEARCH, SITE_SEARCH, PAGE }
+
+    /** one place the picker's videos come from: a yt-dlp list, a YouTube search, or a scanned site page */
+    private data class PSrc(
+        val kind: SK, val term: String, val url: String?, val nexts: List<String>, val count: Int, val done: Boolean = false,
+    )
+
+    private class PState(val srcs: MutableList<PSrc>, val lists: MutableList<List<Candidate>>, val limit: Int, val multi: Boolean)
+
+    private val pstates = ConcurrentHashMap<String, PState>()
+
+    private fun setPicker(id: String, f: PickerRequest.() -> PickerRequest) =
+        pickers.update { list -> list.map { if (it.id == id) it.f() else it } }
+
+    private fun merged(st: PState): List<Candidate> = st.lists.flatten().distinctBy { it.url }.take(MAX_LIST)
+
+    private fun splitTerms(q: String): List<String> =
+        q.split(Regex("[,،;\\n]+")).map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(10)
+
+    /** First load of a source. */
+    private fun fetchFirst(pid: String, src: PSrc, limit: Int): Pair<PSrc, List<Candidate>> = when (src.kind) {
+        SK.YT_LIST -> src.copy(count = limit, done = false) to ytList(pid, src.url!!, limit)
+        SK.YT_SEARCH -> src.copy(count = limit, done = false) to ytList(pid, "ytsearch$limit:${src.term}", null)
+        SK.SITE_SEARCH -> {
+            val su = PageScan.findSearchUrl(src.url!!, src.term)
+            val (c, nx) = PageScan.scanWithNext(su)
+            PSrc(SK.PAGE, src.term, su, nx, 0) to c
+        }
+        SK.PAGE -> {
+            val (c, nx) = PageScan.scanWithNext(src.url!!)
+            src.copy(nexts = nx, done = false) to c
+        }
+    }
+
+    /** The next batch of a source (only videos not already in [have]). */
+    private fun fetchMore(pid: String, src: PSrc, have: Set<String>): Pair<PSrc, List<Candidate>> = when (src.kind) {
+        SK.PAGE -> {
+            var res: Pair<PSrc, List<Candidate>>? = null
+            for (u in src.nexts) {
+                val r = try { PageScan.scanWithNext(u) } catch (_: Throwable) { continue }
+                val fresh = r.first.filter { it.url !in have }
+                if (fresh.isNotEmpty()) { res = src.copy(nexts = r.second) to fresh; break }
+            }
+            res ?: (src.copy(done = true) to emptyList())
+        }
+        SK.YT_LIST, SK.YT_SEARCH -> {
+            val n = minOf(src.count + 60, MAX_LIST)
+            val all = if (src.kind == SK.YT_SEARCH) ytList(pid, "ytsearch$n:${src.term}", null) else ytList(pid, src.url!!, n)
+            val fresh = all.filter { it.url !in have }
+            src.copy(count = n, done = fresh.isEmpty() || n >= MAX_LIST) to fresh
+        }
+        SK.SITE_SEARCH -> src.copy(done = true) to emptyList()
+    }
+
+    fun pickerMore(id: String) = pickerReload(id, refresh = false)
+
+    fun pickerRefresh(id: String) = pickerReload(id, refresh = true)
+
+    private fun pickerReload(id: String, refresh: Boolean) {
+        val st = pstates[id] ?: return
+        if (pickers.value.firstOrNull { it.id == id }?.loading != false) return
+        setPicker(id) { copy(loading = true, note = null) }
+        scope.launch {
+            var err: Throwable? = null
+            var added = 0
+            resolveGate.withPermit {
+                try {
+                    if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
+                    for (i in st.srcs.indices) {
+                        try {
+                            val src = st.srcs[i]
+                            val group = { c: Candidate -> if (st.multi) c.copy(group = src.term) else c }
+                            if (refresh) {
+                                val (ns, c) = fetchFirst("pk_$id", src, st.limit)
+                                st.srcs[i] = ns; st.lists[i] = c.map(group)
+                            } else if (!src.done) {
+                                val have = merged(st).map { it.url }.toSet()
+                                val (ns, fresh) = fetchMore("pk_$id", src, have)
+                                st.srcs[i] = ns; st.lists[i] = st.lists[i] + fresh.map(group); added += fresh.size
+                            }
+                        } catch (t: Throwable) { err = err ?: t }
+                    }
+                } catch (t: Throwable) { err = t }
+            }
+            val all = merged(st)
+            val note = when {
+                err != null && all.isEmpty() -> friendlyError(err!!)
+                err != null -> friendlyError(err!!)
+                !refresh && added == 0 -> tr("ما لقيت المزيد", "No more results")
+                else -> null
+            }
+            setPicker(id) {
+                copy(candidates = all, loading = false, canMore = st.srcs.any { !it.done }, note = note, rev = if (refresh) rev + 1 else rev)
+            }
+        }
+    }
 
     // ------------------------------------------------------------------ step 1: expand a link / search into videos
 
@@ -353,12 +453,14 @@ object DownloadManager {
     private suspend fun resolve(phId: String, url: String, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
         var cands: List<Candidate>? = null
         var problem: Throwable? = null
+        var srcInit: PSrc? = null
         resolveGate.withPermit {
             try {
                 if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
                 if (phId in canceled) throw InterruptedException()
                 try {
                     cands = ytList(phId, url, limit)
+                    srcInit = PSrc(SK.YT_LIST, "", url, emptyList(), limit)
                 } catch (t: Throwable) {
                     if (phId in canceled) throw t
                     // yt-dlp could not list it -> if it is an ordinary site, read the page itself and list the links
@@ -367,11 +469,12 @@ object DownloadManager {
                     val big = listOf("youtube.", "youtu.be", "tiktok.", "instagram.", "twitter.", "x.com", "facebook.")
                     var scanned: List<Candidate> = emptyList()
                     var scanErr: Throwable? = null
+                    var scanNexts: List<String> = emptyList()
                     if (big.none { host.contains(it) }) {
                         update(phId) { copy(info = tr("جاري فحص الصفحة...", "Scanning the page...")) }
-                        try { scanned = PageScan.scan(url) } catch (e: Throwable) { scanErr = e }
+                        try { val r = PageScan.scanWithNext(url); scanned = r.first; scanNexts = r.second } catch (e: Throwable) { scanErr = e }
                     }
-                    if (scanned.isNotEmpty()) cands = scanned
+                    if (scanned.isNotEmpty()) { cands = scanned; srcInit = PSrc(SK.PAGE, "", url, scanNexts, 0) }
                     else if (scanErr != null) throw PageProblem(tr("تعذر فتح الصفحة: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}", "Could not open the page: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}"))
                     else throw t
                 }
@@ -385,7 +488,7 @@ object DownloadManager {
         val found = cands
         when {
             wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
-            found != null -> deliver(phId, tr("الروابط", "Links"), found, q, limit, pick, zip, batch)
+            found != null -> deliver(phId, tr("الروابط", "Links"), found, q, limit, pick, zip, batch, listOfNotNull(srcInit), listOf(found))
             problem is PageProblem ->
                 update(phId) { copy(status = Status.FAILED, error = problem?.message) }
             else -> {
@@ -400,16 +503,30 @@ object DownloadManager {
         phId: String, query: String, siteUrl: String?, q: Quality, limit: Int,
         pick: Boolean, zip: Boolean, batch: String, label: String,
     ) {
-        var cands: List<Candidate>? = null
+        val terms = splitTerms(query).ifEmpty { listOf(query.trim()) }
+        val multi = terms.size > 1
+        val srcs = ArrayList<PSrc>()
+        val lists = ArrayList<List<Candidate>>()
+        val failedTerms = ArrayList<String>()
+        var firstErr: Throwable? = null
         var problem: Throwable? = null
         resolveGate.withPermit {
             try {
                 if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
-                if (phId in canceled) throw InterruptedException()
-                cands = if (siteUrl == null) {
-                    ytList(phId, "ytsearch$limit:$query", null)
-                } else {
-                    PageScan.scan(PageScan.findSearchUrl(siteUrl, query))
+                for ((n, term) in terms.withIndex()) {
+                    if (phId in canceled) throw InterruptedException()
+                    if (multi) update(phId) { copy(info = "${n + 1}/${terms.size}: $term") }
+                    try {
+                        val s0 = if (siteUrl == null) PSrc(SK.YT_SEARCH, term, null, emptyList(), limit)
+                        else PSrc(SK.SITE_SEARCH, term, siteUrl, emptyList(), 0)
+                        val (s1, c) = fetchFirst(phId, s0, limit)
+                        srcs += s1
+                        lists += c.map { if (multi) it.copy(group = term) else it }
+                    } catch (t: Throwable) {
+                        if (phId in canceled) throw t
+                        failedTerms += term
+                        firstErr = firstErr ?: t
+                    }
                 }
             } catch (t: Throwable) {
                 problem = t
@@ -417,23 +534,30 @@ object DownloadManager {
         }
         val wasCanceled = canceled.remove(phId)
         jobs.remove(phId)
-        val found = cands
+        val found = lists.flatten()
+        val title = if (failedTerms.isEmpty()) label
+        else label + tr(" (ما لقيت: ${failedTerms.joinToString("، ")})", " (nothing for: ${failedTerms.joinToString(", ")})")
         when {
             wasCanceled -> { setStatus(phId, Status.CANCELED); maybeZip(batch) }
-            found != null -> deliver(phId, label, found, q, limit, pick, zip, batch)
-            else -> update(phId) { copy(status = Status.FAILED, error = friendlyError(problem ?: IllegalStateException())) }
+            problem == null && lists.isNotEmpty() -> deliver(phId, title, found, q, limit, pick, zip, batch, srcs, lists, multi)
+            else -> update(phId) { copy(status = Status.FAILED, error = friendlyError(problem ?: firstErr ?: IllegalStateException())) }
         }
     }
 
     /** Found [cands]: ask the user which ones (picker), or queue them all. */
-    private fun deliver(phId: String, label: String, cands: List<Candidate>, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
+    private fun deliver(
+        phId: String, label: String, cands: List<Candidate>, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String,
+        srcs: List<PSrc> = emptyList(), lists: List<List<Candidate>> = emptyList(), multi: Boolean = false,
+    ) {
         val list = cands.distinctBy { it.url }.take(MAX_LIST)
         when {
             list.isEmpty() -> update(phId) { copy(status = Status.FAILED, error = tr("ما لقيت فيديوهات", "No videos found")) }
             list.size == 1 || !pick -> enqueue(phId, list.take(limit), q, zip, batch)
             else -> {
                 items.update { l -> l.filterNot { it.id == phId } }
-                pickers.update { it + PickerRequest(newId(), label, list, limit, q, zip, batch) }
+                val pid = newId()
+                if (srcs.isNotEmpty()) pstates[pid] = PState(srcs.toMutableList(), lists.toMutableList(), limit, multi)
+                pickers.update { it + PickerRequest(pid, label, list, limit, q, zip, batch, canMore = srcs.any { s -> !s.done }) }
             }
         }
     }

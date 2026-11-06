@@ -18,6 +18,8 @@ object PageScan {
     private val IMG = Regex("<img\\b([^>]*)>", RegexOption.IGNORE_CASE)
     private val FORM = Regex("<form\\b([^>]*)>(.*?)</form>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
     private val INPUT = Regex("<input\\b([^>]*)>", RegexOption.IGNORE_CASE)
+    private val LINK = Regex("<link\\b([^>]*)>", RegexOption.IGNORE_CASE)
+    private val NEXT_TEXT = Regex("^(next|التالي|التالية|›|»|>>|>)$", RegexOption.IGNORE_CASE)
     private val TAG = Regex("<[^>]*>")
     private val SPACES = Regex("\\s+")
     private val ATTR = Regex("""([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""")
@@ -69,7 +71,10 @@ object PageScan {
         runCatching { URL(URL(base), href).toString() }.getOrNull()
 
     /** Likely video links (links with a thumbnail) found on [pageUrl], same site only. */
-    fun scan(pageUrl: String): List<Candidate> {
+    fun scan(pageUrl: String): List<Candidate> = scanWithNext(pageUrl).first
+
+    /** Like [scan], plus the address(es) of the page that follows this one (for "load more"). */
+    fun scanWithNext(pageUrl: String): Pair<List<Candidate>, List<String>> {
         val (final, html) = fetch(pageUrl)
         val host = URL(final).host
         val root = host.split('.').takeLast(2).joinToString(".")
@@ -104,7 +109,32 @@ object PageScan {
             if (img == null) continue
             seen[u] = Rec(title.ifBlank { url.path.trim('/').substringAfterLast('/') }, thumb)
         }
-        return seen.map { (u, r) -> Candidate(u, r.title, r.thumb, host) }
+        return seen.map { (u, r) -> Candidate(u, r.title, r.thumb, host) } to nextUrls(final, html)
+    }
+
+    /** Where the next page of a listing is: rel=next / a "next" link, else the page number in the address + 1, else guesses. */
+    private fun nextUrls(final: String, html: String): List<String> {
+        for (m in LINK.findAll(html)) {
+            val a = attrs(m.groupValues[1])
+            if (a["rel"]?.lowercase()?.contains("next") == true) a["href"]?.let { absolute(final, it) }?.let { return listOf(it) }
+        }
+        for (m in ANCHOR.findAll(html)) {
+            val a = attrs(m.groupValues[1])
+            val href = a["href"]?.trim().orEmpty()
+            if (href.isEmpty() || href.startsWith("#") || href.startsWith("javascript", true)) continue
+            val text = unescape(m.groupValues[2].replace(TAG, " ")).replace(SPACES, " ").trim()
+            val hint = listOf(a["class"], a["aria-label"], a["title"]).joinToString(" ") { it.orEmpty() }.lowercase().split(SPACES)
+            val isNext = a["rel"]?.lowercase()?.contains("next") == true || NEXT_TEXT.matches(text) || "next" in hint
+            if (isNext) absolute(final, href)?.takeIf { it != final }?.let { return listOf(it) }
+        }
+        Regex("([?&]page=)(\\d+)").find(final)?.let { return listOf(final.replaceRange(it.groups[2]!!.range, (it.groupValues[2].toInt() + 1).toString())) }
+        Regex("(/page/)(\\d+)").find(final)?.let { return listOf(final.replaceRange(it.groups[2]!!.range, (it.groupValues[2].toInt() + 1).toString())) }
+        val base = final.substringBefore('#')
+        return listOf(
+            base + (if ('?' in base) "&" else "?") + "page=2",
+            base.trimEnd('/') + "/page/2/",
+            base.trimEnd('/') + "/2/",
+        )
     }
 
     /** Finds the site's own search form on [siteUrl] and builds the results-page URL for [query]. */

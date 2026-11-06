@@ -46,4 +46,10 @@ data class PickerRequest(
     val quality: Quality,
     val zip: Boolean,
     val batch: String,
+    /** more pages can be loaded ("load more") */
+    val canMore: Boolean = false,
+    val loading: Boolean = false,
+    /** changes when the list is reloaded from scratch, so the picker resets its selection */
+    val rev: Int = 0,
+    val note: String? = null,
 )

@@ -366,7 +366,7 @@ fun MainScreen() {
                             onValueChange = { searchText = it },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            label = { Text(tr("اكتب اسم اللي تبيه", "Type what you are looking for")) },
+                            label = { Text(tr("اكتب اسم أو أكثر (افصل بفاصلة ،)", "Type one or more names (separate with commas)")) },
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilterChip(selected = !searchInSite, onClick = { searchInSite = false }, label = { Text(tr("في يوتيوب", "On YouTube")) })
@@ -426,6 +426,8 @@ fun MainScreen() {
             req = req,
             onConfirm = { chosen -> DownloadManager.confirmPicker(req.id, chosen) },
             onDismiss = { DownloadManager.dismissPicker(req.id) },
+            onMore = { DownloadManager.pickerMore(req.id) },
+            onRefresh = { DownloadManager.pickerRefresh(req.id) },
         )
     }
 
@@ -550,10 +552,18 @@ private fun CheckRow(text: String, checked: Boolean, onChange: (Boolean) -> Unit
 
 /** Full-screen grid: every video is a square tile with its picture and name, tap to select / unselect. */
 @Composable
-private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Unit, onDismiss: () -> Unit) {
+private fun PickerDialog(
+    req: PickerRequest, onConfirm: (List<Candidate>) -> Unit, onDismiss: () -> Unit, onMore: () -> Unit, onRefresh: () -> Unit,
+) {
     val total = req.candidates.size
     val max = req.limit
-    val selected = remember(req.id) { mutableStateListOf<Int>().apply { addAll(0 until minOf(total, max)) } }
+    val selected = remember(req.id, req.rev) { mutableStateListOf<Int>().apply { addAll(0 until minOf(total, max)) } }
+    // videos added by "load more" are ticked too (up to the limit)
+    var prevTotal by remember(req.id, req.rev) { mutableIntStateOf(total) }
+    LaunchedEffect(total) {
+        for (i in prevTotal until total) if (selected.size < max) selected.add(i)
+        prevTotal = total
+    }
     var firstN by remember(req.id) { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -590,6 +600,22 @@ private fun PickerDialog(req: PickerRequest, onConfirm: (List<Candidate>) -> Uni
                         modifier = Modifier.weight(1f).height(48.dp),
                     ) { Text(tr("تحميل المحدد (${selected.size})", "Download selected (${selected.size})")) }
                     OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text(tr("إلغاء", "Cancel")) }
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(onClick = onRefresh, enabled = !req.loading) {
+                        Icon(Icons.Filled.Refresh, null)
+                        Spacer(Modifier.width(4.dp))
+                        Text(tr("تحديث", "Refresh"))
+                    }
+                    if (req.canMore) {
+                        OutlinedButton(onClick = onMore, enabled = !req.loading) { Text(tr("تحميل المزيد", "Load more")) }
+                    }
+                    if (req.loading) {
+                        LinearProgressIndicator(Modifier.weight(1f))
+                    } else {
+                        req.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, maxLines = 2) }
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 LazyVerticalGrid(
