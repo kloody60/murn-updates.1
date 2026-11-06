@@ -17,7 +17,12 @@ enum class Quality(private val ar: String, private val en: String, val audioForm
 }
 
 /** One video found in a link / page / search, before the user picked it. */
-data class Candidate(val url: String, val title: String, val thumb: String?, val group: String?)
+data class Candidate(
+    val url: String, val title: String, val thumb: String?, val group: String?,
+    /** a picture (downloaded directly), not a video */
+    val isImage: Boolean = false,
+    val referer: String? = null,
+)
 
 data class Item(
     val id: String,
@@ -36,6 +41,8 @@ data class Item(
     val resolution: String? = null,
     /** the video came out clearly smaller than the quality the user chose */
     val lowRes: Boolean = false,
+    val image: Boolean = false,
+    val referer: String? = null,
 ) {
     /** counts as "work still to do" (keeps the background service alive) */
     val active: Boolean get() = status == Status.RESOLVING || status == Status.QUEUED || status == Status.RUNNING

@@ -133,6 +133,17 @@ object SocialFix {
         }.joinToString("\n", postfix = "\n").let { if (it.isBlank()) "" else it }
     }
 
+    private val IMAGE_PATH = Regex("""\.(?:jpe?g|png|webp|gif|bmp|avif)$""", RegexOption.IGNORE_CASE)
+
+    /** the link itself is a picture file */
+    fun isImageUrl(url: String): Boolean =
+        runCatching { IMAGE_PATH.containsMatchIn(URL(url).path) }.getOrDefault(false)
+
+    /** a readable file name for [url]: its last path segment without extension */
+    fun nameOf(url: String): String =
+        runCatching { URL(url).path.trimEnd('/').substringAfterLast('/').substringBeforeLast('.') }.getOrNull()
+            ?.takeIf { it.isNotBlank() } ?: "image"
+
     fun isTikTokPhoto(url: String) = url.contains("tiktok.com/") && url.contains("/photo/")
 
     /** yt-dlp says "Unsupported URL: <the real photo link>" even for short vt.tiktok.com links; pull that link out. */
@@ -229,16 +240,17 @@ object SocialFix {
     }
 
     /** Downloads [url] to a file named [base] + the right extension. */
-    fun download(url: String, dir: File, base: String): File {
+    fun download(url: String, dir: File, base: String, referer: String = "https://www.tiktok.com/"): File {
         val c = (URL(url).openConnection() as HttpURLConnection).apply {
             setRequestProperty("User-Agent", MOBILE_UA)
-            setRequestProperty("Referer", "https://www.tiktok.com/")
+            setRequestProperty("Referer", referer)
             connectTimeout = 20_000
             readTimeout = 30_000
         }
         try {
             if (c.responseCode != 200) error("HTTP ${c.responseCode}")
             val ext = when {
+                c.contentType.orEmpty().contains("gif") -> "gif"
                 c.contentType.orEmpty().contains("webp") -> "webp"
                 c.contentType.orEmpty().contains("png") -> "png"
                 else -> "jpg"

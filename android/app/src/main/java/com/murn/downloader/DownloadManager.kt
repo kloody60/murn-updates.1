@@ -65,6 +65,10 @@ object DownloadManager {
     val parallel = MutableStateFlow(3)
     val quality = MutableStateFlow(Quality.P1080)
     val paused = MutableStateFlow(false)
+    /** false = links are treated as videos, true = as pictures */
+    val imageMode = MutableStateFlow(false)
+
+    fun setImageMode(b: Boolean) { imageMode.value = b }
     /** report of the tr("فحص الاتصال", "Connection check") button (null = no report to show) */
     val diagText = MutableStateFlow<String?>(null)
 
@@ -152,7 +156,8 @@ object DownloadManager {
         for (url in urls) {
             val id = newId()
             items.update { it + Item(id, url, title = url, status = Status.RESOLVING, quality = q, batch = batch, zip = zip) }
-            jobs[id] = scope.launch { resolve(id, url, q, limit, pick, zip, batch) }
+            val images = imageMode.value
+            jobs[id] = scope.launch { resolve(id, url, q, limit, pick, zip, batch, images) }
         }
         DownloadService.start(app)
         return urls.size
@@ -508,7 +513,7 @@ object DownloadManager {
     /** an error whose message is already written for the user */
     private class PageProblem(message: String) : Exception(message)
 
-    private suspend fun resolve(phId: String, url: String, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String) {
+    private suspend fun resolve(phId: String, url: String, q: Quality, limit: Int, pick: Boolean, zip: Boolean, batch: String, images: Boolean = false) {
         var cands: List<Candidate>? = null
         var problem: Throwable? = null
         var srcInit: PSrc? = null
@@ -516,7 +521,12 @@ object DownloadManager {
             try {
                 if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
                 if (phId in canceled) throw InterruptedException()
-                try {
+                val directImg = SocialFix.isImageUrl(url)
+                if (directImg || images) {
+                    update(phId) { copy(info = tr("جاري البحث عن الصور...", "Looking for pictures...")) }
+                    cands = if (directImg) listOf(Candidate(url, SocialFix.nameOf(url), url, null, true, url))
+                    else ImageFind.find(app, url).also { if (it.isEmpty()) throw PageProblem(tr("ما لقيت صور في الصفحة", "No pictures found in the page")) }
+                } else try {
                     cands = ytList(phId, url, limit)
                     srcInit = PSrc(SK.YT_LIST, "", url, emptyList(), limit)
                 } catch (t: Throwable) {
@@ -622,7 +632,7 @@ object DownloadManager {
 
     /** Turns [cands] into queued rows (replacing the placeholder row [phId] when there is one). */
     private fun enqueue(phId: String?, cands: List<Candidate>, q: Quality, zip: Boolean, batch: String) {
-        val rows = cands.map { Item(newId(), it.url, it.title, Status.QUEUED, q, group = it.group, batch = batch, zip = zip) }
+        val rows = cands.map { Item(newId(), it.url, it.title, Status.QUEUED, q, group = it.group, batch = batch, zip = zip, image = it.isImage, referer = it.referer) }
         items.update { list ->
             if (phId == null) list + rows else list.flatMap { if (it.id == phId) rows else listOf(it) }
         }
@@ -653,6 +663,7 @@ object DownloadManager {
         try {
             if (!ready.await()) error(tr("المحرك غير جاهز", "Engine not ready"))
             if (id in canceled) throw InterruptedException()
+            if (item.image) { downloadImage(id, item, tmp); return }
 
             try {
                 runYtdlp(id, buildRequest(item, tmp))
@@ -661,6 +672,10 @@ object DownloadManager {
                 val text = t.message.orEmpty()
                 val photoUrl = SocialFix.photoUrlIn(text) ?: item.url.takeIf { SocialFix.isTikTokPhoto(it) }
                 val isTikTok = photoUrl != null || hostOf(item.url).contains("tiktok.")
+                val host0 = hostOf(item.url)
+                val imgWorthy = !host0.contains("youtu") &&
+                        (text.contains("no video", true) || text.contains("Unsupported URL", true) || text.contains("Unable to extract", true))
+                if (isBigHost(host0) && !isTikTok && imgWorthy && tryImages(id, item)) return
                 if (text.contains("extracted extension", true)) {
                     // yt-dlp refuses files whose extension looks odd (Snapchat links end in a random code): allow it,
                     // and let ffmpeg repack the file into a normal mp4
@@ -722,6 +737,7 @@ object DownloadManager {
                     }
                     if (!ok && ses != null && ses.best == null) reasons += tr("• المتصفح الداخلي ما لقى رابط فيديو في الصفحة", "• The in-app browser found no video link in the page")
                 }
+                if (!ok && tryImages(id, item)) return
                 if (!ok) {
                     val vpn = if (text.contains("403") || text.contains("451"))
                         "\n" + tr("جرّب تطفي الـVPN أو تغيّر موقعه: بعض المواقع تحجب عناوين الـVPN.", "Try turning the VPN off or changing its location: some sites block VPN addresses.")
@@ -829,6 +845,34 @@ object DownloadManager {
         }
     }.getOrNull()
 
+    /** No video in the link: look for pictures. true = pictures found (picker shown / queued), the row is replaced. */
+    private suspend fun tryImages(id: String, item: Item): Boolean {
+        update(id) { copy(info = tr("ما لقيت فيديو، جاري البحث عن صور...", "No video found, looking for pictures..."), progress = 0f) }
+        val cands = try { ImageFind.find(app, item.url) } catch (_: Throwable) { emptyList() }
+        if (id in canceled || id in pausedIds) throw InterruptedException()
+        if (cands.isEmpty()) return false
+        deliver(id, tr("صور الصفحة", "Pictures of the page"), cands, item.quality, 1000, true, item.zip, item.batch)
+        return true
+    }
+
+    /** Downloads one picture file and saves it to Downloads/Murn. */
+    private fun downloadImage(id: String, item: Item, tmp: File) {
+        update(id) { copy(info = tr("جاري تحميل الصورة...", "Downloading the picture..."), progress = 0f) }
+        val base = safeName(item.title.ifBlank { SocialFix.nameOf(item.url) }).take(80)
+        val f = SocialFix.download(item.url, tmp, base, item.referer ?: item.url)
+        if (id in canceled || id in pausedIds) throw InterruptedException()
+        if (item.zip) {
+            val stage = File(baseDir(), "zip/${item.batch}").apply { mkdirs() }
+            f.copyTo(File(stage, f.name), overwrite = true)
+        } else {
+            saveToDownloads(f.name, mimeFor(f.name)) { out -> f.inputStream().use { it.copyTo(out) } }
+        }
+        val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(f.absolutePath, o)
+        val res = if (o.outWidth > 0) "${o.outWidth}x${o.outHeight}" else null
+        update(id) { copy(status = Status.DONE, info = "", progress = 1f, savedName = f.name, resolution = res) }
+    }
+
     private fun hostOf(url: String): String = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
 
     private fun isBigHost(host: String): Boolean =
@@ -921,6 +965,10 @@ object DownloadManager {
         "m4a" -> "audio/mp4"
         "opus", "ogg" -> "audio/ogg"
         "zip" -> "application/zip"
+        "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
+        "webp" -> "image/webp"
+        "gif" -> "image/gif"
         else -> "application/octet-stream"
     }
 

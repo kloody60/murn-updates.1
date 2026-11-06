@@ -187,6 +187,7 @@ fun MainScreen() {
     val paused by DownloadManager.paused.collectAsStateWithLifecycle()
     val shared by MainActivity.sharedText.collectAsStateWithLifecycle()
     val diag by DownloadManager.diagText.collectAsStateWithLifecycle()
+    val imageMode by DownloadManager.imageMode.collectAsStateWithLifecycle()
     val upd by Updater.state.collectAsStateWithLifecycle()
     var showUpdate by remember { mutableStateOf(false) }
 
@@ -311,6 +312,11 @@ fun MainScreen() {
                             placeholder = { Text("https://www.youtube.com/playlist?list=...") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(tr("نوع التحميل:", "Download:"), style = MaterialTheme.typography.bodyMedium)
+                            FilterChip(selected = !imageMode, onClick = { DownloadManager.setImageMode(false) }, label = { Text(tr("فيديو", "Videos")) })
+                            FilterChip(selected = imageMode, onClick = { DownloadManager.setImageMode(true) }, label = { Text(tr("صور", "Pictures")) })
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedButton(onClick = {
                                 clipboard.getText()?.text?.takeIf { it.isNotBlank() }?.let {

@@ -135,4 +135,44 @@ object WebSniff {
 
     /** Cookies the browser holds for [url] (sent along when downloading the file the page pointed to). */
     fun cookiesFor(url: String): String = CookieManager.getInstance().getCookie(url).orEmpty()
+
+    /**
+     * Opens [pageUrl] in the hidden browser, scrolls so lazy pictures load, and returns the addresses of the big pictures
+     * (at least 250x250 as displayed) plus the page's og:image. Logins saved in Settings apply (shared cookies).
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    suspend fun images(ctx: Context, pageUrl: String): List<String> {
+        var web: WebView? = null
+        withContext(Dispatchers.Main) {
+            val w = WebView(ctx.applicationContext)
+            web = w
+            w.settings.apply { javaScriptEnabled = true; domStorageEnabled = true; userAgentString = UA }
+            CookieManager.getInstance().setAcceptCookie(true)
+            CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
+            w.webViewClient = WebViewClient()
+            w.loadUrl(pageUrl)
+        }
+        delay(5000)
+        repeat(3) {
+            withContext(Dispatchers.Main) { web?.evaluateJavascript("window.scrollTo(0, document.body.scrollHeight)", null) }
+            delay(1500)
+        }
+        val collect = """
+            (function(){var r=[];
+              document.querySelectorAll('img').forEach(function(i){
+                var u=i.currentSrc||i.src;
+                if(u&&u.indexOf('http')===0&&i.naturalWidth>=250&&i.naturalHeight>=250) r.push(u);});
+              var og=document.querySelector('meta[property="og:image"]'); if(og&&og.content) r.push(og.content);
+              return JSON.stringify(r);})()
+        """
+        val raw = CompletableDeferred<String?>()
+        withContext(Dispatchers.Main) { web?.evaluateJavascript(collect) { v -> raw.complete(v) } }
+        val text = withTimeoutOrNull(5000) { raw.await() }
+            ?.let { runCatching { JSONArray("[$it]").getString(0) }.getOrNull() }.orEmpty()
+        withContext(Dispatchers.Main) { runCatching { web?.stopLoading(); web?.destroy() } }
+        return runCatching {
+            val a = JSONArray(text)
+            (0 until a.length()).map { a.getString(it) }.distinct()
+        }.getOrDefault(emptyList())
+    }
 }
