@@ -67,6 +67,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -356,11 +357,12 @@ fun MainScreen() {
                                     }
                                 }
                             }
-                            OutlinedButton(onClick = { input = "" }, enabled = input.isNotEmpty()) {
-                                Icon(Icons.Filled.Close, null)
-                                Spacer(Modifier.width(6.dp))
-                                Text(tr("مسح", "Clear"))
-                            }
+                            // small round "clear" button (was squeezed into a big circle by the row)
+                            OutlinedIconButton(
+                                onClick = { input = "" },
+                                enabled = input.isNotEmpty(),
+                                modifier = Modifier.size(34.dp),
+                            ) { Icon(Icons.Filled.Close, tr("مسح", "Clear"), modifier = Modifier.size(15.dp)) }
                         }
                         OutlinedTextField(
                             value = limitText,
