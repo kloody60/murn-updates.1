@@ -316,34 +316,56 @@ object DownloadManager {
     private fun splitTerms(q: String): List<String> =
         q.split(Regex("[,،;\\n]+")).map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(10)
 
+    /** Reads [url] and keeps following its "next page" until about [want] videos are found (or [maxPages] pages were read). */
+    private fun scanMany(url: String, want: Int, maxPages: Int = 10): Pair<List<Candidate>, List<String>> {
+        val first = PageScan.scanWithNext(url) // a failure of the first page is reported to the user
+        val seen = first.first.mapTo(HashSet()) { it.url }
+        val (more, nexts) = scanNext(first.second, seen, want - first.first.size, maxPages - 1)
+        return (first.first + more) to nexts
+    }
+
+    /** Follows [starts] (possible addresses of the next page) page after page; only videos not in [seen] count. */
+    private fun scanNext(starts: List<String>, seen: MutableSet<String>, want: Int, maxPages: Int): Pair<List<Candidate>, List<String>> {
+        var nexts = starts
+        val out = ArrayList<Candidate>()
+        var pages = 0
+        while (out.size < want && pages < maxPages && nexts.isNotEmpty()) {
+            var advanced = false
+            for (u in nexts) {
+                val r = try { PageScan.scanWithNext(u) } catch (_: Throwable) { continue }
+                val fresh = r.first.filter { seen.add(it.url) }
+                if (fresh.isNotEmpty()) { out += fresh; nexts = r.second; pages++; advanced = true; break }
+            }
+            if (!advanced) { nexts = emptyList(); break } // no further page: the list is complete
+        }
+        return out to nexts
+    }
+
     /** First load of a source. */
     private fun fetchFirst(pid: String, src: PSrc, limit: Int): Pair<PSrc, List<Candidate>> = when (src.kind) {
         SK.YT_LIST -> src.copy(count = limit, done = false) to ytList(pid, src.url!!, limit)
         SK.YT_SEARCH -> src.copy(count = limit, done = false) to ytList(pid, "ytsearch$limit:${src.term}", null)
         SK.SITE_SEARCH -> {
             val su = PageScan.findSearchUrl(src.url!!, src.term)
-            val (c, nx) = PageScan.scanWithNext(su)
-            PSrc(SK.PAGE, src.term, su, nx, 0) to c
+            val (c, nx) = scanMany(su, limit)
+            PSrc(SK.PAGE, src.term, su, nx, 0, done = nx.isEmpty()) to c
         }
         SK.PAGE -> {
-            val (c, nx) = PageScan.scanWithNext(src.url!!)
-            src.copy(nexts = nx, done = false) to c
+            val (c, nx) = scanMany(src.url!!, limit)
+            src.copy(nexts = nx, done = nx.isEmpty()) to c
         }
     }
 
     /** The next batch of a source (only videos not already in [have]). */
     private fun fetchMore(pid: String, src: PSrc, have: Set<String>): Pair<PSrc, List<Candidate>> = when (src.kind) {
         SK.PAGE -> {
-            var res: Pair<PSrc, List<Candidate>>? = null
-            for (u in src.nexts) {
-                val r = try { PageScan.scanWithNext(u) } catch (_: Throwable) { continue }
-                val fresh = r.first.filter { it.url !in have }
-                if (fresh.isNotEmpty()) { res = src.copy(nexts = r.second) to fresh; break }
-            }
-            res ?: (src.copy(done = true) to emptyList())
+            // each press loads up to 4 more pages (about 100 more videos)
+            val (fresh, nx) = scanNext(src.nexts, have.toMutableSet(), 100, 4)
+            if (fresh.isNotEmpty()) src.copy(nexts = nx, done = nx.isEmpty()) to fresh
+            else src.copy(done = true) to emptyList()
         }
         SK.YT_LIST, SK.YT_SEARCH -> {
-            val n = minOf(src.count + 60, MAX_LIST)
+            val n = minOf(src.count + 100, MAX_LIST)
             val all = if (src.kind == SK.YT_SEARCH) ytList(pid, "ytsearch$n:${src.term}", null) else ytList(pid, src.url!!, n)
             val fresh = all.filter { it.url !in have }
             src.copy(count = n, done = fresh.isEmpty() || n >= MAX_LIST) to fresh
@@ -472,9 +494,9 @@ object DownloadManager {
                     var scanNexts: List<String> = emptyList()
                     if (big.none { host.contains(it) }) {
                         update(phId) { copy(info = tr("جاري فحص الصفحة...", "Scanning the page...")) }
-                        try { val r = PageScan.scanWithNext(url); scanned = r.first; scanNexts = r.second } catch (e: Throwable) { scanErr = e }
+                        try { val r = scanMany(url, limit); scanned = r.first; scanNexts = r.second } catch (e: Throwable) { scanErr = e }
                     }
-                    if (scanned.isNotEmpty()) { cands = scanned; srcInit = PSrc(SK.PAGE, "", url, scanNexts, 0) }
+                    if (scanned.isNotEmpty()) { cands = scanned; srcInit = PSrc(SK.PAGE, "", url, scanNexts, 0, done = scanNexts.isEmpty()) }
                     else if (scanErr != null) throw PageProblem(tr("تعذر فتح الصفحة: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}", "Could not open the page: ${scanErr.message ?: scanErr.javaClass.simpleName}\n${friendlyError(t)}"))
                     else throw t
                 }
