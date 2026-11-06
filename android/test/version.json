@@ -1,11 +1,11 @@
 {
-  "versionCode": 123,
-  "versionName": "1.1.0.23",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-23/Murn-debug.apk",
-  "sha256": "c0b022a653733fadba5ee5cee0590619a5b8ef1924ed62c69aea35f089088c17",
-  "sizeBytes": 118805451,
+  "versionCode": 124,
+  "versionName": "1.1.0.24",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-24/Murn-debug.apk",
+  "sha256": "376e6af9892cfb5c100b234dc0b42d0f551ff6f8144f08761b5f4005e32d1813",
+  "sizeBytes": 118824611,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Honor the chosen quality exactly: sort by the chosen resolution instead of filtering (no jump to best when height is unknown)",
-  "notes_en": "Honor the chosen quality exactly: sort by the chosen resolution instead of filtering (no jump to best when height is unknown)"
+  "notes": "Unsupported sites: capture the real video URL at the chosen quality through a hidden browser before downloading (the page-level extractor only saw the 240p preview)",
+  "notes_en": "Unsupported sites: capture the real video URL at the chosen quality through a hidden browser before downloading (the page-level extractor only saw the 240p preview)"
 }
