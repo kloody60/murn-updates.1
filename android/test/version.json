@@ -1,11 +1,11 @@
 {
-  "versionCode": 133,
-  "versionName": "1.1.0.33",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-33/Murn-debug.apk",
-  "sha256": "117e301c04590750e1c869713c48cccec1119a2e4ab842173b4614944702a3e1",
-  "sizeBytes": 118907359,
+  "versionCode": 132,
+  "versionName": "1.1.0.32",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-32/Murn-debug.apk",
+  "sha256": "2f32f26498c5d2fcec3a73486aedabb003c75653759833d9e48b3872eb467b1a",
+  "sizeBytes": 118898015,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Bulk card redesign: download type chips (video / photos), round clear button, photo mode scans post photos directly",
-  "notes_en": "Bulk card redesign: download type chips (video / photos), round clear button, photo mode scans post photos directly"
+  "notes": "Resolver: measure the real resolution and duration of every captured URL, keep only the main clip, pick by real resolution; strict mode = never below 400p",
+  "notes_en": "Resolver: measure the real resolution and duration of every captured URL, keep only the main clip, pick by real resolution; strict mode = never below 400p"
 }
