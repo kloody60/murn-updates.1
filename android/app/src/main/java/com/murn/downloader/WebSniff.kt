@@ -40,8 +40,13 @@ object WebSniff {
         })()
     """
 
+    /** What the hidden browser saw: the video streams it caught and the cookies the site gave it (e.g. Cloudflare clearance). */
+    class Session(val hits: List<String>, val best: String?, val cookies: String)
+
+    suspend fun find(ctx: Context, pageUrl: String, timeoutMs: Long = 30_000): String? = session(ctx, pageUrl, timeoutMs).best
+
     @SuppressLint("SetJavaScriptEnabled")
-    suspend fun find(ctx: Context, pageUrl: String, timeoutMs: Long = 30_000): String? {
+    suspend fun session(ctx: Context, pageUrl: String, timeoutMs: Long = 25_000): Session {
         val hits = Collections.synchronizedList(ArrayList<String>())
         var web: WebView? = null
         withContext(Dispatchers.Main) {
@@ -82,12 +87,14 @@ object WebSniff {
             // after the first hit give the page a few more seconds, so a better (m3u8) stream can show up
             if (firstHit != 0L && System.currentTimeMillis() - firstHit > 3500) break
         }
+        val cookies = runCatching { CookieManager.getInstance().flush(); CookieManager.getInstance().getCookie(pageUrl) }.getOrNull().orEmpty()
         withContext(Dispatchers.Main) { runCatching { web?.stopLoading(); web?.destroy() } }
 
         val all = synchronized(hits) { hits.toList() }
-        return all.firstOrNull { it.contains(".m3u8", true) }
+        val best = all.firstOrNull { it.contains(".m3u8", true) }
             ?: all.firstOrNull { it.contains(".mp4", true) }
             ?: all.firstOrNull()
+        return Session(all, best, cookies)
     }
 
     /**

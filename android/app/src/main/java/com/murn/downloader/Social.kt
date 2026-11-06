@@ -108,11 +108,11 @@ object CookieStore {
     }
 
     /** Writes all saved logins into one Netscape cookies file for yt-dlp. False = nobody is logged in. */
-    fun exportTo(ctx: Context, dest: File): Boolean {
+    fun exportTo(ctx: Context, dest: File, extra: String = ""): Boolean {
         val parts = platforms.map { fileOf(ctx, it) }.filter { it.isFile && it.length() > 0 }
-        if (parts.isEmpty()) return false
+        if (parts.isEmpty() && extra.isBlank()) return false
         dest.parentFile?.mkdirs()
-        dest.writeText("# Netscape HTTP Cookie File\n" + parts.joinToString("") { it.readText() })
+        dest.writeText("# Netscape HTTP Cookie File\n" + parts.joinToString("") { it.readText() } + extra)
         return true
     }
 }
@@ -120,6 +120,18 @@ object CookieStore {
 /** Fixes for posts yt-dlp cannot read by itself. */
 object SocialFix {
     private val PHOTO_URL = Regex("""https?://[^\s'"]*tiktok\.com/[^\s'"]*/photo/\d+[^\s'"]*""")
+
+    /** The browser's "a=b; c=d" cookie string for [url] as Netscape lines (domain = the site's root domain), for yt-dlp. */
+    fun netscapeLines(url: String, cookieHeader: String): String {
+        val host = runCatching { URL(url).host }.getOrNull() ?: return ""
+        val root = host.split('.').takeLast(2).joinToString(".")
+        val exp = System.currentTimeMillis() / 1000 + 30L * 24 * 3600
+        return cookieHeader.split(';').mapNotNull { kv ->
+            val k = kv.trim()
+            val eq = k.indexOf('=')
+            if (eq <= 0) null else ".$root\tTRUE\t/\tTRUE\t$exp\t${k.substring(0, eq)}\t${k.substring(eq + 1)}"
+        }.joinToString("\n", postfix = "\n").let { if (it.isBlank()) "" else it }
+    }
 
     fun isTikTokPhoto(url: String) = url.contains("tiktok.com/") && url.contains("/photo/")
 

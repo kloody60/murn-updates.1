@@ -644,20 +644,41 @@ object DownloadManager {
                 // the site refuses yt-dlp's requests: read the page like a browser would, find the video file in it,
                 // and hand that direct link to yt-dlp (with the page as referer)
                 update(id) { copy(info = tr("جاري المحاولة بطريقة المتصفح...", "Trying browser mode..."), progress = 0f) }
-                var media: String? = runCatching { MediaFind.find(item.url, item.quality) }.getOrNull()
-                if (media == null) {
-                    // the video is built by JavaScript: open the page in the in-app browser and catch the stream
-                    update(id) { copy(info = tr("جاري فتح الصفحة بالمتصفح الداخلي والتقاط الفيديو...", "Opening the page in the in-app browser to catch the video..."), progress = 0f) }
-                    media = try { WebSniff.find(app, item.url) } catch (e: Throwable) { null }
-                }
-                if (id in canceled || id in pausedIds) throw InterruptedException()
-                if (media == null) throw PageProblem(
-                    tr("${friendlyError(t)}\n(جرّبت قراءة الصفحة والمتصفح الداخلي وما لقيت رابط فيديو. ممكن الفيديو محمي أو يحتاج تسجيل دخول)", "${friendlyError(t)}\n(I tried reading the page and the in-app browser but found no video link. The video may be protected or need a login)"))
-                try {
-                    runYtdlp(id, buildRequest(item, tmp, media, item.url))
+                val reasons = ArrayList<String>()
+                fun attempt(label: String, req: YoutubeDLRequest): Boolean = try {
+                    runYtdlp(id, req); true
                 } catch (t2: Throwable) {
                     if (id in canceled || id in pausedIds || t2 is InterruptedException || t2 is YoutubeDL.CanceledException) throw t2
-                    throw PageProblem(tr("المحاولة الأولى: ${friendlyError(t)}\n\nبطريقة المتصفح: ${friendlyError(t2)}", "First attempt: ${friendlyError(t)}\n\nBrowser mode: ${friendlyError(t2)}"))
+                    reasons += "• $label: ${friendlyError(t2).lines().first().take(160)}"
+                    false
+                }
+                var ok = false
+                // 1) a video link found in the page's HTML
+                val media = runCatching { MediaFind.find(item.url, item.quality) }.getOrNull()
+                if (media != null) ok = attempt(tr("رابط من الصفحة", "Link found in the page"), buildRequest(item, tmp, media, item.url))
+                if (!ok) {
+                    // 2) open the page in the in-app browser (JavaScript, Cloudflare checks, cookies) and use what it got
+                    update(id) { copy(info = tr("جاري فتح الصفحة بالمتصفح الداخلي...", "Opening the page in the in-app browser..."), progress = 0f) }
+                    val ses = try { WebSniff.session(app, item.url) } catch (e: Throwable) { null }
+                    if (id in canceled || id in pausedIds) throw InterruptedException()
+                    val lines = ses?.cookies?.takeIf { it.isNotBlank() }?.let { SocialFix.netscapeLines(item.url, it) }.orEmpty()
+                    if (lines.isNotEmpty()) {
+                        update(id) { copy(info = tr("جاري المحاولة مع كوكيز المتصفح...", "Retrying with the browser's cookies..."), progress = 0f) }
+                        ok = attempt(tr("المحرك مع كوكيز المتصفح", "Engine with the browser's cookies"), buildRequest(item, tmp, null, null, lines))
+                    }
+                    val best = ses?.best
+                    if (!ok && best != null && best != media) {
+                        update(id) { copy(info = tr("جاري تحميل الفيديو الملتقط...", "Downloading the caught video..."), progress = 0f) }
+                        val cdn = SocialFix.netscapeLines(best, WebSniff.cookiesFor(best))
+                        ok = attempt(tr("الفيديو الملتقط من المتصفح", "Video caught in the browser"), buildRequest(item, tmp, best, item.url, lines + cdn))
+                    }
+                    if (!ok && ses != null && ses.best == null) reasons += tr("• المتصفح الداخلي ما لقى رابط فيديو في الصفحة", "• The in-app browser found no video link in the page")
+                }
+                if (!ok) {
+                    val vpn = if (text.contains("403") || text.contains("451"))
+                        "\n" + tr("جرّب تطفي الـVPN أو تغيّر موقعه: بعض المواقع تحجب عناوين الـVPN.", "Try turning the VPN off or changing its location: some sites block VPN addresses.")
+                    else ""
+                    throw PageProblem(friendlyError(t) + "\n\n" + tr("المحاولات بعدها:", "Attempts after that:") + "\n" + reasons.joinToString("\n") + vpn)
                 }
                 }
             }
@@ -773,7 +794,7 @@ object DownloadManager {
         }
     }
 
-    private fun buildRequest(item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null): YoutubeDLRequest {
+    private fun buildRequest(item: Item, tmp: File, mediaUrl: String? = null, referer: String? = null, cookieLines: String = ""): YoutubeDLRequest {
         val q = item.quality
         val host = hostOf(item.url)
         return YoutubeDLRequest(mediaUrl ?: item.url).apply {
@@ -785,7 +806,7 @@ object DownloadManager {
             addOption("--fragment-retries", 5)
             addOption("--socket-timeout", 30)
             // logged-in platform accounts (Settings -> platform accounts); a private copy per download
-            File(tmp, "cookies.txt").let { if (CookieStore.exportTo(app, it)) addOption("--cookies", it.absolutePath) }
+            File(tmp, "cookies.txt").let { if (CookieStore.exportTo(app, it, cookieLines)) addOption("--cookies", it.absolutePath) }
             // a direct media link has no real title, so name the file after the video we picked
             addOption("-o", File(tmp, (if (mediaUrl != null) safeName(item.title) else "%(title).100s") + ".%(ext)s").absolutePath)
             if (!isBigHost(host)) {
