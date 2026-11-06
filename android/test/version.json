@@ -1,11 +1,11 @@
 {
-  "versionCode": 129,
-  "versionName": "1.1.0.29",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-29/Murn-debug.apk",
-  "sha256": "ab21736b2ce333f59fc32605cb1e006a7b860bca4ea19abd433205592c07e0e3",
-  "sizeBytes": 118871275,
+  "versionCode": 130,
+  "versionName": "1.1.0.30",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-30/Murn-debug.apk",
+  "sha256": "c6be19ac63acaef2f7f275679197c16e659580c305f2f33a79517ff4235ee23d",
+  "sizeBytes": 118877963,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Strict quality: skip clips that are not available at the chosen resolution (checked before and after download)",
-  "notes_en": "Strict quality: skip clips that are not available at the chosen resolution (checked before and after download)"
+  "notes": "Resolver: broaden media sniffing, retry with the default mobile identity when nothing is captured, stop early on page errors, and report what the page contained",
+  "notes_en": "Resolver: broaden media sniffing, retry with the default mobile identity when nothing is captured, stop early on page errors, and report what the page contained"
 }
