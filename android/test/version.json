@@ -1,11 +1,11 @@
 {
-  "versionCode": 134,
-  "versionName": "1.1.0.34",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-34/Murn-debug.apk",
-  "sha256": "01d0d29530e928c86a34fe223a10aeefde60c560d820123d90a0c08d947c2688",
-  "sizeBytes": 118923611,
+  "versionCode": 135,
+  "versionName": "1.1.0.35",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-35/Murn-debug.apk",
+  "sha256": "10b1602ba683297c222f38d8e0f22fc4c33fb51c144cf9bbdf439cc545808ec3",
+  "sizeBytes": 118925627,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Highest quality by default; download the captured HD URL directly with the browser identity, try ranked alternatives, never silently fall back to the 240p page version",
-  "notes_en": "Highest quality by default; download the captured HD URL directly with the browser identity, try ranked alternatives, never silently fall back to the 240p page version"
+  "notes": "Scan: follow pagination and scroll to load all clips of a list page; remove the high-quality checkbox (always on)",
+  "notes_en": "Scan: follow pagination and scroll to load all clips of a list page; remove the high-quality checkbox (always on)"
 }
