@@ -1,11 +1,11 @@
 {
-  "versionCode": 119,
-  "versionName": "1.1.0.19",
-  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-19/Murn-debug.apk",
-  "sha256": "5b74f311795da29b97cbce36ddf2b787912c8b1653ed53cc71518ede4592d316",
-  "sizeBytes": 118792635,
+  "versionCode": 120,
+  "versionName": "1.1.0.20",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-20/Murn-debug.apk",
+  "sha256": "eacff9968b409d7fe60213ee0c8b0b3868d8c69bdf9410e4d40ea32d9e0c17da",
+  "sizeBytes": 118805499,
   "minSdk": 29,
   "mandatory": false,
-  "notes": "Blocked links: retry the scan with a browser identity, and open a single blocked link straight in the in-app browser",
-  "notes_en": "Blocked links: retry the scan with a browser identity, and open a single blocked link straight in the in-app browser"
+  "notes": "Pages the downloader can't read (e.g. model/list pages): scrape the video cards through a hidden browser and show the selection grid; retry downloads with a browser identity when blocked",
+  "notes_en": "Pages the downloader can't read (e.g. model/list pages): scrape the video cards through a hidden browser and show the selection grid; retry downloads with a browser identity when blocked"
 }
