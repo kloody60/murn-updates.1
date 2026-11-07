@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.1/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.1/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.1/Murn1.ps1",
-    "ps1_sha256":  "F74A4A15F8B175377852EC6054BB4F93F7D9B236E23B635ABE9840ABBF4ADD40",
-    "version":  "1.4.1",
-    "notes":  "نسخة تجريبية للتأكد من عمل التحديث داخل التطبيق.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.1/falcon.ico",
-    "sha256":  "E3AFC7629DE759B35C7FC827EFA2C44BE04B98F59169A0BCA0D88228D9B88936",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/Murn1.ps1",
+    "ps1_sha256":  "4D4CEACE952D353A89AC255A6F56B9B54A423BAB9291BA7FABDB094F856DA29E",
+    "version":  "1.4.2",
+    "notes":  "تحميل قائمة التشغيل من يوتيوب: خيار تحديد أقصى عدد فيديوهات (الافتراضي 200).",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/falcon.ico",
+    "sha256":  "2E51D4EC5D5A3A1ACE093548D00B139B440117798EF213320A7BB639C50BF8F9",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
