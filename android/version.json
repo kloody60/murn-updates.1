@@ -1,0 +1,11 @@
+{
+  "versionCode": 5,
+  "versionName": "1.0.4",
+  "apkUrl": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/android/releases/1.0.4/MurnVideo-1.0.4.apk",
+  "sha256": "c429ba2d7a47d18af273612c1aaa8fc271276e3fb85e493f24fff2e08d6439e5",
+  "sizeBytes": 46398507,
+  "minSdk": 29,
+  "mandatory": false,
+  "notes": "إصلاح انهيار «ابدأ التحسين» على أندرويد 15 وما فوق (جوالات سامسونج الحديثة)، وصار أي فشل في المعالجة بالخلفية يظهر كرسالة بدل إغلاق التطبيق.",
+  "notes_en": "Fix the crash on “Start enhancing” on Android 15 and newer (recent Samsung phones); a background-processing failure now shows a message instead of closing the app."
+}
