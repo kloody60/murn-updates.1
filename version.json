@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/Murn1.ps1",
-    "ps1_sha256":  "4D4CEACE952D353A89AC255A6F56B9B54A423BAB9291BA7FABDB094F856DA29E",
-    "version":  "1.4.2",
-    "notes":  "تحميل قائمة التشغيل من يوتيوب: خيار تحديد أقصى عدد فيديوهات (الافتراضي 200).",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.2/falcon.ico",
-    "sha256":  "2E51D4EC5D5A3A1ACE093548D00B139B440117798EF213320A7BB639C50BF8F9",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/Murn1.ps1",
+    "ps1_sha256":  "791C9513E111D7D276D4D2BECC9F86DF085167CC93AF438432F61E37A5B9E156",
+    "version":  "1.4.3",
+    "notes":  "فصل زر إيقاف Edge عن زر حذف Copilot بتبويب أدوات التصليح، كل واحد صار مستقل لحاله.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/falcon.ico",
+    "sha256":  "32E0C7515C09CA83B3E94CE9A95B4995D562C2E9F2C31ACF6B5AB9F9994CB1DF",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
