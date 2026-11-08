@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.6/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.6/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.6/Murn1.ps1",
-    "ps1_sha256":  "08298488478A5F497EEAB98BF96151D5B0BBE2374976FD556E57BCE0075FD97F",
-    "version":  "1.4.6",
-    "notes":  "زرين جديدين: \"تثبيت Edge\" (تحميل وتثبيت المتصفح من جديد) و\"تثبيت Copilot\" (إرجاعه بعد حذفه)، كل واحد مستقل لحاله.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.6/falcon.ico",
-    "sha256":  "779945A868FD65738C737AB6A68807C24A868085D891C62FF996E92441C8D268",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/Murn1.ps1",
+    "ps1_sha256":  "728D4FF29E6DF731D79F3A0567C2ACD4AA2A88D23C3985A2D1FD2DF27B7D196B",
+    "version":  "1.4.7",
+    "notes":  "تغيير مجلد الحفظ الافتراضي لأداة تحميل الفيديو.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/falcon.ico",
+    "sha256":  "B9ED5954A419F7087679CA78FA0331B166323C83DECEF5E55ECE22A9CA69EFD6",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
