@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/Murn1.ps1",
-    "ps1_sha256":  "BE9BF8C2CACD4C992DD7AAB63891DFFA8DB569624862CB96E9A5C455A5C4EFF7",
-    "version":  "1.4.4",
-    "notes":  "أدوات التصليح صارت تشتغل بالخلفية بدون نافذة PowerShell ظاهرة، ويطلع إشعار \"تم بنجاح\" أو رسالة خطأ واضحة بعد كل عملية.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/falcon.ico",
-    "sha256":  "51E34DF9C9899B8064F06148B6000B75B2A3BEA30837CF6122D84F519DDF9E8C",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.5/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.5/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.5/Murn1.ps1",
+    "ps1_sha256":  "7FD13F0B42B75A1B42A3287D885B7D9E20978A2ACCB313E62D1385B37691BB24",
+    "version":  "1.4.5",
+    "notes":  "زر جديد مستقل \"حذف Edge\" يحذف متصفح Edge بالكامل من الجهاز، منفصل عن زر إيقاف التشغيل التلقائي وزر حذف Copilot.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.5/falcon.ico",
+    "sha256":  "F9CC11DAC3FD287DC754612A30788234176EEF11C0EC1FD4D29857081EDE9B95",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
