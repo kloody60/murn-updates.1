@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/Murn1.ps1",
-    "ps1_sha256":  "791C9513E111D7D276D4D2BECC9F86DF085167CC93AF438432F61E37A5B9E156",
-    "version":  "1.4.3",
-    "notes":  "فصل زر إيقاف Edge عن زر حذف Copilot بتبويب أدوات التصليح، كل واحد صار مستقل لحاله.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.3/falcon.ico",
-    "sha256":  "32E0C7515C09CA83B3E94CE9A95B4995D562C2E9F2C31ACF6B5AB9F9994CB1DF",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/Murn1.ps1",
+    "ps1_sha256":  "BE9BF8C2CACD4C992DD7AAB63891DFFA8DB569624862CB96E9A5C455A5C4EFF7",
+    "version":  "1.4.4",
+    "notes":  "أدوات التصليح صارت تشتغل بالخلفية بدون نافذة PowerShell ظاهرة، ويطلع إشعار \"تم بنجاح\" أو رسالة خطأ واضحة بعد كل عملية.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.4/falcon.ico",
+    "sha256":  "51E34DF9C9899B8064F06148B6000B75B2A3BEA30837CF6122D84F519DDF9E8C",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
