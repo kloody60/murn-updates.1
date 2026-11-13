@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/Murn1.ps1",
-    "ps1_sha256":  "728D4FF29E6DF731D79F3A0567C2ACD4AA2A88D23C3985A2D1FD2DF27B7D196B",
-    "version":  "1.4.7",
-    "notes":  "تغيير مجلد الحفظ الافتراضي لأداة تحميل الفيديو.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.7/falcon.ico",
-    "sha256":  "B9ED5954A419F7087679CA78FA0331B166323C83DECEF5E55ECE22A9CA69EFD6",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/Murn1.ps1",
+    "ps1_sha256":  "23299610BFB77C09752E4C097B29E245BC6484B14BFA90180FE6695E9A4EDE38",
+    "version":  "1.4.8",
+    "notes":  "إصلاح خطأ أثناء التثبيت (Value does not fall within the expected range)، ومسار التثبيت الافتراضي واسم الاختصارات صار بالإنجليزي (Program Files).",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/falcon.ico",
+    "sha256":  "B0432F4E0EE5D4BB772E7611B50B2D2DA207CA1EE808DD6AE0737F5A572D15BB",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
