@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/Murn1.ps1",
-    "ps1_sha256":  "6A7D2A50BD48499E4355C665F5121D8C01A4A7DC374450E8EAAC63D74E963ABF",
-    "version":  "1.4.10",
-    "notes":  "إذا فشل إنشاء الاختصارات أثناء التثبيت لأي سبب، التثبيت يكمل عادي وينبهك بالسبب بدل ما يوقف بخطأ.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/falcon.ico",
-    "sha256":  "FAFC95658FDFD1B76CDCA4F968E609DEBF25CFC5CD94A90F3AF8F878D86B1BBA",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.11/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.11/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.11/Murn1.ps1",
+    "ps1_sha256":  "E2CF91E61686BBAC338CA6888036C19349334669A0802A57904EA8CE410D2DE3",
+    "version":  "1.4.11",
+    "notes":  "رسائل خطأ التثبيت صارت تحدد بالضبط أي خطوة فشلت (إنشاء المجلد/نسخ الملفات/الاختصارات) مع نوع الخطأ، عشان تشخيص أدق لو تكررت مشكلة.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.11/falcon.ico",
+    "sha256":  "62010097B2C1042BEBFD519E71222C5CD76D68077686F3F8900C56584B956C8A",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
