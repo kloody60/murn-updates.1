@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/Murn1.ps1",
-    "ps1_sha256":  "23299610BFB77C09752E4C097B29E245BC6484B14BFA90180FE6695E9A4EDE38",
-    "version":  "1.4.8",
-    "notes":  "إصلاح خطأ أثناء التثبيت (Value does not fall within the expected range)، ومسار التثبيت الافتراضي واسم الاختصارات صار بالإنجليزي (Program Files).",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.8/falcon.ico",
-    "sha256":  "B0432F4E0EE5D4BB772E7611B50B2D2DA207CA1EE808DD6AE0737F5A572D15BB",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/Murn1.ps1",
+    "ps1_sha256":  "542694324A84CB362B892885E195A26A854C8C094ADE26E00BA78561CB048801",
+    "version":  "1.4.9",
+    "notes":  "زر جديد \"إلغاء تثبيت البرنامج\" بصفحة واجهة مرن يحذف البرنامج والاختصارات بالكامل من الجهاز.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/falcon.ico",
+    "sha256":  "EC5B614CCADEE2B9807992BAB1657A8FCB34766D98DD88D1319775C9F483F1C3",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
