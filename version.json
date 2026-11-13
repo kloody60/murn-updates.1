@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/Murn1.ps1",
-    "ps1_sha256":  "542694324A84CB362B892885E195A26A854C8C094ADE26E00BA78561CB048801",
-    "version":  "1.4.9",
-    "notes":  "زر جديد \"إلغاء تثبيت البرنامج\" بصفحة واجهة مرن يحذف البرنامج والاختصارات بالكامل من الجهاز.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.9/falcon.ico",
-    "sha256":  "EC5B614CCADEE2B9807992BAB1657A8FCB34766D98DD88D1319775C9F483F1C3",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/Murn1.ps1",
+    "ps1_sha256":  "6A7D2A50BD48499E4355C665F5121D8C01A4A7DC374450E8EAAC63D74E963ABF",
+    "version":  "1.4.10",
+    "notes":  "إذا فشل إنشاء الاختصارات أثناء التثبيت لأي سبب، التثبيت يكمل عادي وينبهك بالسبب بدل ما يوقف بخطأ.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.4.10/falcon.ico",
+    "sha256":  "FAFC95658FDFD1B76CDCA4F968E609DEBF25CFC5CD94A90F3AF8F878D86B1BBA",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
