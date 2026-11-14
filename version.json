@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/Murn1.ps1",
-    "ps1_sha256":  "EA5FF2C5F95301BDC33193950ED2531DF4D076B348505405BC2FEC2073AB4E69",
-    "version":  "1.5.1",
-    "notes":  "إصلاح: التحكم بالمراوح ما كان يشتغل بعد التحديث من نسخة أقدم (ملفات المستشعرات ما كانت تنسخ تلقائياً). الآن يصلحها البرنامج بنفسه عند التشغيل.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/falcon.ico",
-    "sha256":  "0271A76922F626F4591FE76B95DC42E89807269604A88BA008665E008C2C0859",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.2/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.2/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.2/Murn1.ps1",
+    "ps1_sha256":  "6CE146FA96BB04BE00100A1B17319A361C7972F3802C889C78DD78340C3C0540",
+    "version":  "1.5.2",
+    "notes":  "التثبيت صار تلقائي بدون أي شاشة اختيار مسار. وسرعة كل مروحة بتبويب التحكم بالمراوح صارت تتحرك لحالها مباشرة (مو ثابتة) وتعكس الوضع الفعلي حتى في الوضع التلقائي.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.2/falcon.ico",
+    "sha256":  "D3C31905B117DD3A351077900F2B3C72D41FA0161EB9BA3A5DCE0B8D759DB575",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
