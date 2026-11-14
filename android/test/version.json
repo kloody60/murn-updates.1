@@ -1,0 +1,11 @@
+{
+  "versionCode": 138,
+  "versionName": "1.1.0.38",
+  "apkUrl": "https://github.com/kloody60/murn-updates.1/releases/download/build-38/Murn-debug.apk",
+  "sha256": "8faca0ecd4e1809ee913133c8dc5c39a79ca9f7bc0159ad941c8a8060efb6bfa",
+  "sizeBytes": 118925631,
+  "minSdk": 29,
+  "mandatory": false,
+  "notes": "",
+  "notes_en": ""
+}
