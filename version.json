@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.0/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.0/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.0/Murn1.ps1",
-    "ps1_sha256":  "F20693770BA54E7A6CC65A32C83AEA80A8293E9CB2920F13CF73BE08D15C6FC8",
-    "version":  "1.5.0",
-    "notes":  "تبويب جديد \"التحكم بالمراوح\": يعرض سرعة كل مروحة بجهازك لحالها (معالج/كرت شاشة/كيس) مع شريط تحكم مستقل لكل وحدة، وزر رجوع للوضع التلقائي.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.0/falcon.ico",
-    "sha256":  "AD30CA6F1EB1A97ED7609ED5A5C96CE1087AE95250C2C4BDDBA6B8719BE120C1",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/Murn1.ps1",
+    "ps1_sha256":  "EA5FF2C5F95301BDC33193950ED2531DF4D076B348505405BC2FEC2073AB4E69",
+    "version":  "1.5.1",
+    "notes":  "إصلاح: التحكم بالمراوح ما كان يشتغل بعد التحديث من نسخة أقدم (ملفات المستشعرات ما كانت تنسخ تلقائياً). الآن يصلحها البرنامج بنفسه عند التشغيل.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.1/falcon.ico",
+    "sha256":  "0271A76922F626F4591FE76B95DC42E89807269604A88BA008665E008C2C0859",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
