@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.1/Murn Interface.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.1/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.1/Murn1.ps1",
-    "ps1_sha256":  "0D18F1B448B90E77FEEDE00AC253D3540D5097A69F679229A330451F4B8411DB",
-    "version":  "1.6.1",
-    "notes":  "غيّرت اسم ملف البرنامج من العربي للإنجليزي (Murn Interface.exe) بكل مكان: التحميل، التثبيت، الاختصارات، عنوان النافذة، والرسائل. محتوى البرنامج نفسه ضل عربي زي ما هو.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.1/falcon.ico",
-    "sha256":  "5E12C5A550E227A233727C9C6ACBAD629A807D165259F319A8B749E0D4618FC8",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/Murn Interface.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/Murn1.ps1",
+    "ps1_sha256":  "F5FB07190BC1D8E9CE74AB596F40D9DE7104603969856C78ABFF4A22411A9B22",
+    "version":  "1.6.2",
+    "notes":  "رجعت اسم البرنامج داخل الواجهة (العنوان بالأعلى، تبويب \"واجهة مرن\"، وعنوان صفحة عن البرنامج) للعربي زي ما كان. اسم ملف التحميل نفسه (Murn Interface.exe) ضل بالإنجليزي.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/falcon.ico",
+    "sha256":  "57A8A2BA779DD1A6173F34177BA8F57AEACC9507D7BF14E03D5DC71BA1ED4929",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
