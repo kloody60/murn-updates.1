@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.3/واجهة مرن.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.3/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.3/Murn1.ps1",
-    "ps1_sha256":  "B960B33CE00A82D434A6578C280F41C36A351AEF29BF56ABEF0D76B828C2179C",
-    "version":  "1.5.3",
-    "notes":  "إصلاح أمني مهم: شلت كل أنماط تشغيل أوامر مخفية مشفرة (Base64) كانت تخلي حماية ويندوز تشتبه بالبرنامج وتحذفه كفيروس وهمي. البرنامج الآن يشغل نفس الأدوات بنفس الطريقة بس بدون أي تشفير أو إخفاء مريب.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.3/falcon.ico",
-    "sha256":  "461D5181620500E511B185FE2C2F2DB7526B7FC1F5B7FD4195C879621536B78B",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.4/واجهة مرن.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.4/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.4/Murn1.ps1",
+    "ps1_sha256":  "A07E0DD3B4C6571C3F08FC4CC6DDAFF314B978AD7701BCCA75AB68DF74231181",
+    "version":  "1.5.4",
+    "notes":  "حذفت تبويب \"التحكم بالمراوح\" نهائياً — كان سبب إضافي محتمل لتنبيهات حماية ويندوز بسبب السواقة منخفضة المستوى اللي يحتاجها. باقي كل شي زي ما هو، بما فيها عرض حرارة المعالج/الرام/كرت الشاشة بالصفحة الرئيسية.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.5.4/falcon.ico",
+    "sha256":  "9C5D023453E8BB2222E29DAB6AAFC28F79EA9C3CFC17B8777704BFAAC666BCC5",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
