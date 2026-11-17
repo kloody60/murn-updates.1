@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/Murn Interface.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/Murn1.ps1",
-    "ps1_sha256":  "E5577C47C2A52B1EDB10839C9E94C7DE1836018937A4E4406AFB33CEB57E7842",
-    "version":  "1.7.0",
-    "notes":  "إضافة مظهرين للبرنامج: التصميم الأول (سماوي، الافتراضي) والتصميم الثاني (ذهبي). التبديل من تبويب \"واجهة مرن\" ويبقى محفوظ حتى بعد إعادة التشغيل.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/falcon.ico",
-    "sha256":  "4E1E6F7E6DC1EE1173B72863C02CE1C7677C42ABCE197638D7D7DC6F2B3E5E5F",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.1/Murn Interface.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.1/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.1/Murn1.ps1",
+    "ps1_sha256":  "BB067563B5D9A8C5D2AFF151A0B5A33DE988CF67CD9E8998B002BAC9392B7D86",
+    "version":  "1.7.1",
+    "notes":  "تحسين شكل التصميمين فعلياً: توهج زجاجي حول الكروت وصندوق الحالة الرئيسي، وحواف حادة للتصميم الذهبي بدل الدائرية، عشان يبين الفرق بالتصميمين واضح.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.1/falcon.ico",
+    "sha256":  "954259B22EE909A14C6C65731D42AA46C8FD13FAB3C8E45AF0E22446430B10A2",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
