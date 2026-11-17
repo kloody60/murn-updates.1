@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/Murn Interface.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/Murn1.ps1",
-    "ps1_sha256":  "F5FB07190BC1D8E9CE74AB596F40D9DE7104603969856C78ABFF4A22411A9B22",
-    "version":  "1.6.2",
-    "notes":  "رجعت اسم البرنامج داخل الواجهة (العنوان بالأعلى، تبويب \"واجهة مرن\"، وعنوان صفحة عن البرنامج) للعربي زي ما كان. اسم ملف التحميل نفسه (Murn Interface.exe) ضل بالإنجليزي.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.6.2/falcon.ico",
-    "sha256":  "57A8A2BA779DD1A6173F34177BA8F57AEACC9507D7BF14E03D5DC71BA1ED4929",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/Murn Interface.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/falcon.png",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/Murn1.ps1",
+    "ps1_sha256":  "E5577C47C2A52B1EDB10839C9E94C7DE1836018937A4E4406AFB33CEB57E7842",
+    "version":  "1.7.0",
+    "notes":  "إضافة مظهرين للبرنامج: التصميم الأول (سماوي، الافتراضي) والتصميم الثاني (ذهبي). التبديل من تبويب \"واجهة مرن\" ويبقى محفوظ حتى بعد إعادة التشغيل.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.0/falcon.ico",
+    "sha256":  "4E1E6F7E6DC1EE1173B72863C02CE1C7677C42ABCE197638D7D7DC6F2B3E5E5F",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
