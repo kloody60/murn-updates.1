@@ -1,12 +1,12 @@
 {
-    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.3/Murn Interface.exe",
-    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.3/falcon.png",
-    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.3/Murn1.ps1",
-    "ps1_sha256":  "B0C7F950D74C7F74A8E424C39153BB2450377BD45B9C92C058BBFD0579B62E3D",
-    "version":  "1.7.3",
-    "notes":  "تحديث بسيط لتجربة نظام التحديث التلقائي الجديد.",
-    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.7.3/falcon.ico",
-    "sha256":  "A7B788ABEDD9EF45A50EB79A148850FE97B9A0CAD136BF3CEDC32CEE8714DBFB",
+    "url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.0/Murn%20Interface.exe",
+    "png_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.0/falcon.png",
+    "ps1_sha256":  "25F7B6C40FF8805175F05BC032BA6C9D7D68F90ECA42AF40AA592F3079AD20AC",
+    "version":  "1.8.0",
+    "notes":  "إضافة دعم أوامر سطر الأوامر (CLI): تنظيف، تنظيف الرام، التويكات، برامج بدء التشغيل، فحص الجهاز، وفحص/تثبيت التحديثات - كلها ممكن تشتغلها من PowerShell/CMD.",
+    "ico_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.0/falcon.ico",
     "png_sha256":  "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40",
+    "ps1_url":  "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.0/Murn1.ps1",
+    "sha256":  "55019720FD3D1434436FF1E460ECF931984E611DCD30B2D71C4E50E1AE29D762",
     "ico_sha256":  "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6"
 }
