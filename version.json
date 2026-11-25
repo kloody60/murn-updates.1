@@ -1,12 +1,12 @@
 {
-  "version": "1.8.1",
-  "notes": "واجهة جديدة لمرن بتصميم ويندوز 11 ومركز تحكم، مع ستة تصاميم يمكن التبديل بينها وإصلاحات في لوحة مراقبة العتاد.",
-  "url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.1/Murn%20Interface.exe",
-  "sha256": "7427567E731C206508CC5BA0A56BFEC12E8465DB2ECC090432D048C8616C591B",
-  "ps1_url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.1/Murn1.ps1",
-  "ps1_sha256": "379B535D43A8B1C75794063FF5311D069CAC6139C71F55C661A6D6BBFDB8C95E",
-  "ico_url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.1/falcon.ico",
+  "version": "1.8.2",
+  "notes": "استبدال الرسم في الصفحة الرئيسية بحركة ثلاثية الأبعاد تُظهر تجميع قطع الجهاز وتركيب المبرّد وتشغيل المراوح.",
+  "url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.2/Murn%20Interface.exe",
+  "sha256": "8F040B5B3DFD0430549225BFD85240855BF603F721C4E96AF73C601A1C9EA77A",
+  "ps1_url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.2/Murn1.ps1",
+  "ps1_sha256": "EA69190F992A094E64AC3F61C772D50BA8A0CC87572CEB10FA9793836E4020B7",
+  "ico_url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.2/falcon.ico",
   "ico_sha256": "62248430C74CDD1FA2B3F42BB1BAD381C9472A513000FE0F77E41D8DF35767F6",
-  "png_url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.1/falcon.png",
+  "png_url": "https://raw.githubusercontent.com/kloody60/murn-updates.1/main/releases/1.8.2/falcon.png",
   "png_sha256": "D5E42ECF04A67581EAC910D6F30D5FDB4680266AE29ACF7AE66A23887FDF0A40"
 }
